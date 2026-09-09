@@ -9,18 +9,25 @@
     <link href="https://googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
+
+<body style="
+    display: flex; 
+    flex-direction: column; 
+    min-height: 100vh; 
+    margin: 0;
+">
     <header class="site-header">
         <div class="container">
             <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
             <nav>
                 <a href="{% url 'main:show_main' %}">Profile</a>
                 <a href="{% url 'main:show_experience' %}">Experience</a>
+                <a href="{% url 'main:show_education' %}">Education</a>
             </nav>
         </div>
     </header>
 
-    <main>
+    <main style="flex-grow: 1;">
     <section class="experience-section" id="experience">
         <div class="container">
             <p class="section-kicker">Perjalanan saya sejauh ini</p>
@@ -53,7 +60,7 @@
     </section>
 </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer" style="flex-shrink: 0;">
         <div class="container">
             <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>

@@ -24,3 +24,10 @@ class Experience(models.Model):
     @property
     def is_ongoing(self):
         return self.ended_at is None
+
+class Education(models.Model):
+    institution = models.CharField(max_length=100)    
+    degree = models.CharField(max_length=100)         
+    duration = models.CharField(max_length=50)        
+    description = models.TextField(blank=True)  
+    logo_url = models.URLField(blank=True, max_length=500) 

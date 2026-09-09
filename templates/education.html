@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education - {{ name }}</title>
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body style="
+    display: flex; 
+    flex-direction: column; 
+    min-height: 100vh; 
+    margin: 0;
+">
+    <header class="site-header">
+        <div class="container">
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+            <nav>
+                <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_experience' %}">Experience</a>
+                <a href="{% url 'main:show_education' %}">Education</a>
+            </nav>
+        </div>
+    </header>
+
+    <main style="flex-grow: 1;">
+        <section class="education-section" id="education" style="padding: 40px 0;">
+            <div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 16px;">
+                <p class="section-kicker" style="color: #64748b; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+                    Riwayat pendidikan saya
+                </p>
+                <h1 style="font-size: 2.25rem; color: #0f172a; margin-top: 0; margin-bottom: 32px; font-weight: 700;">
+                    Education
+                </h1>
+
+                <div class="education-list-container">
+                    {% for edu in education_list %}
+                        <article class="education-horizontal-card" style="
+                            display: flex; 
+                            align-items: center; 
+                            gap: 24px; 
+                            background: #ffffff; 
+                            border: 1px solid #e2e8f0; 
+                            border-radius: 16px; 
+                            padding: 24px; 
+                            margin-bottom: 20px; 
+                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                        ">
+                            {% if edu.logo_url %}
+                                <div class="education-logo-wrapper" style="
+                                    flex-shrink: 0; 
+                                    width: 90px; 
+                                    height: 90px; 
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center;
+                                    background: #f8fafc;
+                                    border-radius: 12px;
+                                    padding: 8px;
+                                    border: 1px solid #f1f5f9;
+                                ">
+                                    <img src="{{ edu.logo_url }}" alt="Logo of {{ edu.institution }}" style="
+                                        max-width: 100%; 
+                                        max-height: 100%; 
+                                        object-fit: contain;
+                                    ">
+                                </div>
+                            {% endif %}
+
+                            <div class="education-info" style="flex-grow: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                                    <h2 style="margin: 0; font-size: 1.25rem; color: #1e293b; font-weight: 700;">
+                                        {{ edu.institution }}
+                                    </h2>
+                                    <span class="education-duration" style="
+                                        font-size: 0.825rem; 
+                                        color: #64748b; 
+                                        background: #f1f5f9; 
+                                        padding: 4px 12px; 
+                                        border-radius: 9999px;
+                                        font-weight: 500;
+                                    ">
+                                        {{ edu.duration }}
+                                    </span>
+                                </div>
+                                <p class="education-degree" style="margin: 4px 0 8px 0; font-weight: 600; color: #2ec4b6; font-size: 1rem;">
+                                    {{ edu.degree }}
+                                </p>
+                                <p class="education-description" style="margin: 0; color: #475569; font-size: 0.925rem; line-height: 1.5;">
+                                    {{ edu.description }}
+                                </p>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="empty-state-card" style="text-align: center; padding: 40px 24px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; margin-bottom: 20px;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">🎓</div>
+                            <p class="empty-state" style="margin: 0; color: #64748b; font-size: 1rem; font-weight: 500;">
+                                Belum ada riwayat pendidikan yang ditambahkan.
+                            </p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="site-footer" style="flex-shrink: 0;">
+        <div class="container">
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+        </div>
+    </footer>
+</body>
+</html>

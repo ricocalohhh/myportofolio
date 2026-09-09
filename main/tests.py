@@ -56,3 +56,24 @@ class MainTest(TestCase):
         self.assertFalse(self.experience.is_ongoing)
         self.assertContains(response, "Selesai")
         self.assertNotContains(response, "Sedang berlangsung")
+
+    def test_education_url_and_template(self):
+        response = self.client.get('/education/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'education.html')
+
+    def test_education_data_appears_when_exists(self):
+        from main.models import Education
+        Education.objects.create(
+            institution="Universitas Indonesia",
+            degree="S1 Sistem Informasi",
+            duration="2025 - Sekarang"
+        )
+        response = self.client.get('/education/')
+        self.assertContains(response, "Universitas Indonesia")
+        self.assertContains(response, "S1 Sistem Informasi")
+
+    def test_education_empty_state_appears_when_no_data(self):
+        response = self.client.get('/education/')
+        self.assertContains(response, "Belum ada riwayat pendidikan yang ditambahkan.")
+
