@@ -6,7 +6,7 @@ class Experience(models.Model):
         ('internship', 'Internship'),
         ('research', 'Research'),
         ('volunteer', 'Volunteer'),
-        ('part-time', 'Part-Time'),
+        ('part-time', 'Part-Time'),  
         ('full-time', 'Full-Time'),
         ('freelance', 'Freelance'),
     ]
