@@ -1,42 +1,54 @@
-<p class="experience-status">
+<p class="experience-status" style="margin: 0;">
     <button type="button"
             class="button button-danger"
+            style="background-color: #ff7675; color: white; width: 100%; border: 1px solid #222;"
             popovertarget="delete-project-{{ project.id }}"
             aria-label="Hapus {{ project.title }}"
             title="Hapus proyek">
         Hapus Proyek
     </button>
 </p>
+
+<!-- Modal Utama Melayang Menggunakan Class Terbuka Global -->
 <div id="delete-project-{{ project.id }}"
-     class="project-delete-modal"
+     class="project-delete-modal project-popover-window"
      popover="auto"
      role="dialog"
      aria-modal="true"
-     aria-labelledby="delete-project-title-{{ project.id }}">
+     aria-labelledby="delete-project-title-{{ project.id }}"
+     style="border: none; background: transparent; width: 100vw; height: 100vh; max-width: 100%; max-height: 100%; position: fixed; top: 0; left: 0; padding: 0; margin: 0; z-index: 9999;">
+    
+    <!-- Latar Belakang Gelap Transparan -->
     <button type="button"
             class="project-delete-modal__backdrop"
             popovertarget="delete-project-{{ project.id }}"
             popovertargetaction="hide"
-            aria-label="Tutup konfirmasi hapus"></button>
-    <div class="project-delete-modal__content">
+            aria-label="Tutup konfirmasi hapus"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); border: none; cursor: pointer; padding: 0; margin: 0;"></button>
+    
+    <!-- Kotak Konten Utama Modal (Dipaksa Ketengah Menggunakan Posisi Absolut) -->
+    <div class="project-delete-modal__content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ffffff; border: 2px solid #222222; padding: 30px; width: 90%; max-width: 420px; box-shadow: 6px 6px 0px #222222; box-sizing: border-box; text-align: left; font-family: 'Space Grotesk', sans-serif;">
         <button type="button"
                 class="project-delete-modal__close"
                 popovertarget="delete-project-{{ project.id }}"
                 popovertargetaction="hide"
-                aria-label="Tutup konfirmasi hapus">×</button>
-        <h2 id="delete-project-title-{{ project.id }}">Hapus Projek?</h2>
-        <p>
-            Apakah Anda yakin ingin menghapus
-            <strong>{{ project.title }}</strong>?
+                aria-label="Tutup konfirmasi hapus"
+                style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; font-weight: bold; cursor: pointer; color: #888;">×</button>
+        
+        <div style="font-size: 2.5rem; margin-bottom: 10px; text-align: center;">⚠️</div>
+        <h2 id="delete-project-title-{{ project.id }}" style="margin-top: 0; margin-bottom: 15px; font-size: 1.4rem; font-weight: 700; color: #222; text-align: center;">Hapus Projek?</h2>
+        <p style="margin-bottom: 25px; color: #555; font-size: 0.95rem; line-height: 1.5; text-align: center;">
+            Apakah Anda yakin ingin menghapus <br><strong>{{ project.title }}</strong>?
         </p>
-        <div class="project-delete-modal__actions">
+        
+        <div class="project-delete-modal__actions" style="display: flex; justify-content: center; gap: 12px;">
             <button type="button"
                     class="button button-secondary"
                     popovertarget="delete-project-{{ project.id }}"
                     popovertargetaction="hide">Batal</button>
-            <form method="post" action="{% url 'main:delete_project' project.id %}">
+            <form method="post" action="{% url 'main:delete_project' project.id %}" style="margin: 0;">
                 {% csrf_token %}
-                <button type="submit" class="button button-danger">Ya, Hapus</button>
+                <button type="submit" class="button button-danger" style="background-color: #d63031; color: white; font-weight: bold;">Ya, Hapus</button>
             </form>
         </div>
     </div>

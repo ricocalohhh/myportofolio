@@ -612,3 +612,7 @@ h1, .brand {
         text-align: center;
     }
 }
+
+.project-popover-window:popover-open {
+    display: block !important;
+}
