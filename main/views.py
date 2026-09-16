@@ -4,8 +4,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from main.forms import ProjectForm  
 
-from django.shortcuts import render
-
 from main.models import Experience, Education, Project
 
 
@@ -39,14 +37,6 @@ def show_education(request):
     }
     
     return render(request, "education.html", context)
-
-def show_project(request):
-    context = {
-        'name': 'Enrico Oscar Harits Caloh',
-        'education_list': Education.objects.all(),
-    }
-    
-    return render(request, "projects.education.html", context)
 
 def create_project(request):
     form = ProjectForm(request.POST or None)
@@ -88,3 +78,13 @@ def get_projects_json(request):
 
     projects_json = serializers.serialize("json", projects)
     return HttpResponse(projects_json, content_type="application/json")
+
+def delete_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+
+    if request.method == "POST":
+        project.delete()
+        messages.success(request, "Project berhasil dihapus!")
+        return redirect("main:show_projects")
+
+    return redirect("main:show_projects")
