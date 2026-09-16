@@ -1,6 +1,6 @@
 from django.urls import path
 
-from main.views import show_main, show_experience, show_education, create_project
+from main.views import show_main, show_experience, show_education, create_project, show_project
 
 app_name = "main"
 
