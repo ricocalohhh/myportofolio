@@ -40,6 +40,14 @@ def show_education(request):
     
     return render(request, "education.html", context)
 
+def show_project(request):
+    context = {
+        'name': 'Enrico Oscar Harits Caloh',
+        'education_list': Education.objects.all(),
+    }
+    
+    return render(request, "projects.education.html", context)
+
 def create_project(request):
     form = ProjectForm(request.POST or None)
 
