@@ -6,7 +6,7 @@ from main.forms import ProjectForm
 
 from django.shortcuts import render
 
-from main.models import Experience, Education 
+from main.models import Experience, Education, Project
 
 
 def show_main(request):
@@ -61,3 +61,10 @@ def create_project(request):
         "form": form,
     }
     return render(request, "projects_form.html", context)
+
+def show_projects(request):
+    context = {
+        "name": "Enrico Oscar Harits Caloh",
+        "project_list": Project.objects.all(),
+    }
+    return render(request, "projects.html", context)
