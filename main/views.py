@@ -63,8 +63,28 @@ def create_project(request):
     return render(request, "projects_form.html", context)
 
 def show_projects(request):
+    json_response = get_projects_json(request)
+
+    projects = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    projects = [project.object for project in projects]
+    title_query = request.GET.get("title", "").strip()
+
     context = {
         "name": "Enrico Oscar Harits Caloh",
-        "project_list": Project.objects.all(),
+        "project_list": projects,
+        "title_query": title_query,
     }
-    return render(request, "projects.html", context)
+    return render(request, "project.html", context)
+
+def get_projects_json(request):
+    title_query = request.GET.get("title", "").strip()
+    projects = Project.objects.all()
+
+    if title_query:
+        projects = projects.filter(title__icontains=title_query)
+
+    projects_json = serializers.serialize("json", projects)
+    return HttpResponse(projects_json, content_type="application/json")
