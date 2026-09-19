@@ -323,6 +323,15 @@ h1, .brand {
     font-weight: 600;
 }
 
+.status-ongoing {
+    color: #2ec4b6;
+    font-weight: 700;
+}
+
+.status-completed {
+    color: #8d99ae;
+}
+
 .project-form {
     width: 100%;
     max-width: 100%;
