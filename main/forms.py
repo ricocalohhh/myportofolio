@@ -1,6 +1,6 @@
-from django.forms import ModelForm, TextInput, Textarea, URLInput
+from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateInput, URLField
 
-from main.models import Project
+from main.models import Project, Experience
 
 class ProjectForm(ModelForm):
     class Meta:
@@ -49,4 +49,36 @@ class ProjectForm(ModelForm):
                     "placeholder": "https://drive.google.com/thumbnail?id=...&sz=w1000",
                 }
             ),
+        }
+
+class ExperienceForm(ModelForm):
+    # Langsung panggil URLField tanpa awalan "forms."
+    thumbnail = URLField(
+        required=False,
+        label="URL Gambar / Logo (Opsional)",
+        widget=URLInput(attrs={"placeholder": "https://example.com/logo.png"})
+    )
+
+    class Meta:
+        model = Experience
+        fields = [
+            "title",
+            "category",
+            "description",
+            "ended_at",
+            "thumbnail",
+        ]
+
+        labels = {
+            "title": "Judul / Posisi Pengalaman",
+            "category": "Kategori",
+            "description": "Deskripsi Pengalaman",
+            "ended_at": "Tanggal Selesai (Kosongkan jika masih berlangsung)",
+        }
+
+        widgets = {
+            "title": TextInput(attrs={"placeholder": "Asisten Dosen PBP"}),
+            "category": Select(),
+            "description": Textarea(attrs={"placeholder": "Membantu mahasiswa...", "rows": 3}),
+            "ended_at": DateInput(attrs={"type": "date"}),
         }

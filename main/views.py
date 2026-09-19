@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from main.forms import ProjectForm  
+from main.forms import ProjectForm, ExperienceForm
 
 from main.models import Experience, Education, Project
 
@@ -19,13 +19,52 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
-
 def show_experience(request):
     context = {
         "name": "Enrico Oscar Harits Caloh",
         "experience_list": Experience.objects.all(),
     }
     return render(request, "experience.html", context)
+
+def show_experience(request):
+    experience_list = Experience.objects.all().order_by('-started_at')
+    context = {
+        'experience_list': experience_list
+    }
+    return render(request, 'experience.html', context)
+
+def create_experience(request):
+    form = ExperienceForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Pengalaman baru berhasil ditambahkan!")
+        return redirect("main:show_experience")
+
+    context = {
+        "form": form,
+    }
+    return render(request, "experience_form.html", context)
+
+def show_projects(request):
+    project_list = Project.objects.all()
+    context = {
+        'project_list': project_list
+    }
+    return render(request, 'projects.html', context)
+
+def create_project(request):
+    form = ProjectForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Proyek baru berhasil ditambahkan!")
+        return redirect("main:show_projects")
+
+    context = {
+        "form": form,
+    }
+    return render(request, "create_project.html", context)
 
 def show_education(request):
     context = {

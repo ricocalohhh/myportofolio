@@ -9,7 +9,16 @@
         <section class="experience-section" id="experience">
             <div class="container">
                 <p class="section-kicker">Perjalanan saya sejauh ini</p>
-                <h1>Experience</h1>
+                
+                <!-- Pembungkus Header & Tombol -->
+                <div class="experience-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h1 style="margin: 0;">Experience</h1>
+                    
+                    <!-- Tombol Tambah Pengalaman -->
+                    <a href="{% url 'main:create_experience' %}" class="btn btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; background-color: #2563eb; color: white; border-radius: 0.375rem; font-weight: 500;">
+                        + Tambah Pengalaman
+                    </a>
+                </div>
 
                 <div class="experience-grid">
                     {% for experience in experience_list %}
