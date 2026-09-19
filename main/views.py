@@ -64,6 +64,16 @@ def edit_experience(request, id):
     }
     return render(request, "edit_experience.html", context)
 
+def delete_experience(request, id):
+    # Ambil objek berdasarkan ID UUID
+    experience = get_object_or_404(Experience, pk=id)
+    
+    # Hapus dari database
+    experience.delete()
+    
+    messages.success(request, "Pengalaman berhasil dihapus!")
+    return redirect("main:show_experience")
+
 def show_projects(request):
     project_list = Project.objects.all()
     context = {
