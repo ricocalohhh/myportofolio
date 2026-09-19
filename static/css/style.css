@@ -382,6 +382,124 @@ h1, .brand {
     background: var(--ink);
 }
 
+/* ==================== EDUCATION SECTION ==================== */
+
+.main-content {
+    flex-grow: 1;
+}
+
+.container-narrow {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.education-list-container {
+    margin-top: 1.5rem;
+}
+
+.education-horizontal-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 2px 2px 0px var(--line);
+}
+
+.education-logo-wrapper {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    border-radius: var(--radius);
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+}
+
+.education-logo-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.education-info {
+    flex-grow: 1;
+}
+
+.education-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.education-institution {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.education-duration {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+}
+
+.education-degree {
+    margin: 0.25rem 0 0.5rem 0;
+    font-weight: 600;
+    color: var(--accent-dark);
+    font-size: 0.95rem;
+}
+
+.education-description {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.empty-state-card {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: #ffffff;
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 1.25rem;
+}
+
+.empty-state-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Responsif Layar Kecil / Mobile */
+@media (max-width: 600px) {
+    .education-horizontal-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .education-logo-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+}
+
 /* ==================== PROJECTS SECTION ==================== */
 
 .project-header {
