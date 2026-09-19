@@ -36,6 +36,13 @@
                             {% else %}
                                 <p class="experience-status status-completed">✅ Selesai</p>
                             {% endif %}
+
+                            <div class="experience-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <a href="{% url 'main:edit_experience' experience.id %}" class="btn-edit" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #f59e0b; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">
+                                    Edit
+                                </a>
+                            </div>
+                        
                         </article>
                     {% empty %}
                         <p class="empty-state">

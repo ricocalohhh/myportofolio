@@ -46,6 +46,24 @@ def create_experience(request):
     }
     return render(request, "experience_form.html", context)
 
+def edit_experience(request, id):
+    # Ambil objek berdasarkan ID, atau tampilkan 404 jika tidak ditemukan
+    experience = get_object_or_404(Experience, pk=id)
+
+    # Masukkan instance=experience agar form terisi dengan data lama
+    form = ExperienceForm(request.POST or None, instance=experience)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Data pengalaman berhasil diperbarui!")
+        return redirect("main:show_experience")
+
+    context = {
+        "form": form,
+        "experience": experience,
+    }
+    return render(request, "edit_experience.html", context)
+
 def show_projects(request):
     project_list = Project.objects.all()
     context = {
