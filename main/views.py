@@ -11,7 +11,7 @@ def show_main(request):
     context = {
         "name": "Enrico Oscar Harits Caloh",
         "npm": "2506539990",
-        "study_program": "S1 Sisttem Informasi",
+        "study_program": "S1 Sistem Informasi",
         "bio": (
             "Mahasiswa Sistem Informasi Universitas Indonesia yang tertarik "
             "pada proses bisnis dan teknologi."
@@ -67,7 +67,7 @@ def show_projects(request):
         "project_list": projects,
         "title_query": title_query,
     }
-    return render(request, "project.html", context)
+    return render(request, "projects.html", context)
 
 def get_projects_json(request):
     title_query = request.GET.get("title", "").strip()

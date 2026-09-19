@@ -525,12 +525,23 @@ h1, .brand {
 }
 
 .project-grid {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
 }
 
 .project-grid .experience-card {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+/* Responsif untuk Layar HP (1 Kolom) */
+@media (max-width: 768px) {
+    .project-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .project-image {

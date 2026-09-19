@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block meta %}
+    <title>Projects - {{ name }}</title>
+{% endblock meta %}
+
+{% block content %}
+<main class="main-content">
+    <section class="experience-section">
+        <div class="container">
+            <p class="hero-kicker">Karya Yang Saya Bangun</p>
+            
+            <!-- Header Halaman -->
+            <div class="project-header">
+                <h1>Projects</h1>
+                <a href="{% url 'main:create_project' %}" class="button project-add-button">
+                    <span>+</span> Tambah Proyek
+                </a>
+            </div>
+
+            <!-- Form Pencarian -->
+            <form method="get" action="{% url 'main:show_projects' %}" class="project-search">
+                <input type="text" name="title" value="{{ title_query }}" placeholder="Cari berdasarkan nama proyek..." class="project-search__input">
+                <button type="submit" class="button">Cari</button>
+            </form>
+
+            <!-- Jika Data Kosong -->
+            {% if not project_list %}
+                <div class="empty-state-card">
+                    <p class="empty-state-title">Tidak ada proyek yang ditemukan.</p>
+                    <p class="empty-state-subtitle">Coba cari dengan kata kunci lain atau tambahkan proyek baru!</p>
+                </div>
+
+            <!-- Grid Kartu Proyek -->
+            {% else %}
+                <div class="experience-grid project-grid"> 
+                    {% for project in project_list %}
+                        <article class="experience-card">
+                            <div>
+                                <!-- Gambar Proyek -->
+                                {% if project.project_image_url %}
+                                    <img src="{{ project.project_image_url }}" alt="{{ project.title }}" class="project-image">
+                                {% endif %}
+
+                                <!-- Detail Teks -->
+                                <h3>{{ project.title }}</h3>
+                                <p class="project-tech-stack">Tech Stack: {{ project.tech_stack }}</p>
+                                <p class="experience-description">{{ project.description }}</p>
+                            </div>
+
+                            <!-- Tombol Aksi -->
+                            <div class="project-actions">
+                                {% if project.project_url %}
+                                    <a href="{{ project.project_url }}" target="_blank" class="button">Lihat Proyek</a>
+                                {% endif %}
+                                
+                                {% include "components/project_delete_modal.html" with project=project %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+</main>
+{% endblock content %}
