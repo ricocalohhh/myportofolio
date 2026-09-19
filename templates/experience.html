@@ -10,7 +10,7 @@
             <div class="container">
                 <p class="section-kicker">Perjalanan saya sejauh ini</p>
                 
-                <!-- Pembungkus Header & Tombol -->
+                <!-- Header & Tombol -->
                 <div class="experience-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <h1 style="margin: 0;">Experience</h1>
                     
@@ -20,43 +20,74 @@
                     </a>
                 </div>
 
-                <div class="experience-grid">
-                    {% for experience in experience_list %}
-                        <article class="experience-card">
-                            <span class="experience-category">
-                                {{ experience.get_category_display }}
-                            </span>
-                            <h2>{{ experience.title }}</h2>
-                            <p class="experience-description">
-                                {{ experience.description }}
-                            </p>
-
-                            {% if experience.is_ongoing %}
-                                <p class="experience-status status-ongoing">⚡ Sedang berlangsung</p>
-                            {% else %}
-                                <p class="experience-status status-completed">✅ Selesai</p>
-                            {% endif %}
-
-                            <!-- Tombol Edit -->
-                            <div class="experience-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                                <a href="{% url 'main:edit_experience' experience.id %}" class="btn-edit" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #f59e0b; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">
-                                    Edit
-                                </a>
-
-                            <!-- Tombol Delete -->
-                                <a href="{% url 'main:delete_experience' experience.id %}" class="btn-delete" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #ef4444; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;" onclick="return confirm('Apakah Anda yakin ingin menghapus pengalaman ini?');">
-                                    Delete
-                                </a>
-                            </div>
-                        
-                        </article>
-                    {% empty %}
-                        <p class="empty-state">
-                            Belum ada pengalaman yang ditambahkan.
-                        </p>
-                    {% endfor %}
+                <div class="experience-grid" id="experience_cards">
                 </div>
             </div>
         </section>
     </main>
+
+<script>
+    async function getExperiences() {
+        // Mengambil data dari endpoint JSON
+        const response = await fetch("{% url 'main:get_experience_json' %}");
+        
+        // DESERIALISASI: Mengubah string JSON dari server menjadi objek JavaScript
+        const experiences = await response.json();
+        return experiences;
+    }
+
+    async function refreshExperience() {
+        const container = document.getElementById("experience_cards");
+        container.innerHTML = ""; // Bersihkan isi container sebelum memuat data baru
+
+        const experiences = await getExperiences();
+
+        // Tampilkan pesan jika data kosong
+        if (experiences.length === 0) {
+            container.innerHTML = `<p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>`;
+            return;
+        }
+
+        // Mapping kategori 
+        const categoryLabels = {
+            'internship': 'Internship',
+            'research': 'Research',
+            'volunteer': 'Volunteer',
+            'part-time': 'Part-Time',
+            'full-time': 'Full-Time',
+            'freelance': 'Freelance'
+        };
+
+        // Render setiap item data hasil deserialisasi ke dalam HTML
+        experiences.forEach((item) => {
+            const fields = item.fields;
+            const categoryDisplay = categoryLabels[fields.category] || fields.category;
+            
+            const isOngoingStatus = (fields.ended_at === null)
+                ? `<p class="experience-status status-ongoing">⚡ Sedang berlangsung</p>`
+                : `<p class="experience-status status-completed">✅ Selesai</p>`;
+
+            const cardHTML = `
+                <article class="experience-card">
+                    <span class="experience-category">${categoryDisplay}</span>
+                    <h2>${fields.title}</h2>
+                    <p class="experience-description">${fields.description}</p>
+                    ${isOngoingStatus}
+
+                    <div class="experience-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <a href="/experience/${item.pk}/edit/" class="btn-edit" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #f59e0b; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">
+                            Edit
+                        </a>
+                        <a href="/experience/${item.pk}/delete/" class="btn-delete" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #ef4444; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;" onclick="return confirm('Apakah Anda yakin ingin menghapus pengalaman ini?');">
+                            Delete
+                        </a>
+                    </div>
+                </article>
+            `;
+            container.innerHTML += cardHTML;
+        });
+    }
+
+    refreshExperience();
+</script>
 {% endblock content %}

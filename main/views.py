@@ -74,6 +74,16 @@ def delete_experience(request, id):
     messages.success(request, "Pengalaman berhasil dihapus!")
     return redirect("main:show_experience")
 
+def get_experience_json(request):
+    title_query = request.GET.get("title", "").strip()
+    experiences = Experience.objects.all()
+
+    if title_query:
+        experiences = experiences.filter(title__icontains=title_query)
+
+    experiences_json = serializers.serialize("json", experiences)
+    return HttpResponse(experiences_json, content_type="application/json")
+
 def show_projects(request):
     project_list = Project.objects.all()
     context = {
