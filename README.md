@@ -1,26 +1,53 @@
 ### Tugas 2
 
-1. Jelaskan alur yang terjadi ketika pengguna membuka halaman portofolio baru, mulai dari permintaan yang diterima proyek hingga data ditampilkan pada browser. Dalam jawabanmu, jelaskan peran urls.py proyek, urls.py aplikasi, view, model, dan template.
+1. Jelaskan mengapa kita menggunakan ModelForm pada Django alih-alih membuat form HTML secara manual. Selain itu, jelaskan pula mengapa kita diwajibkan menambahkan {% csrf_token %} pada form tersebut!
 
-    Ketika seorang pengguna mengetik alamat personal website saya http://localhost:8000/ lalu membuka bagian education, maka url nya akan ikut berubah menjadi http://localhost:8000/education/. Ketika pengguna menekan enter setelah mengetik tersebut, file pertama yang menghandle ini adalah portofolio/urls.py, file ini hanya membaca bagian depan saja dan kalau dia melihat ada lanjutan pada url seperti /education/ maka tugasnya dilanjutkan oleh main/urls.py untuk mencocokkan bagian mana yang sesuai dengan alamat.
+  - Efisiensi (DRY - Don't Repeat Yourself):`ModelForm` secara otomatis membangun input form berdasarkan field yang terdefinisi pada Model Django tanpa perlu menulis tag `<input>` secara manual di HTML.
+  - Validasi Otomatis: Menangani validasi tipe data, batas karakter (`max_length`), serta status wajib isi (*required/blank*) di tingkat server, lalu mengembalikan pesan eror secara otomatis jika input tidak valid.
+  - Kemudahan Penyimpanan: Memangkas proses *extract* data dari `request.POST` secara manual karena penyimpanan data ke database cukup dengan memanggil method `.save()`.
 
-    Setelah ditemukan bagian yang cocok dengan alamat maka tugas akan dilanjutkan oleh main/views.py. Fungsi show_education yang terletak dalam views.py berfungsi mengatur data apa yang ditampilkan dengan cara request data ke models.py agar mengambil data dari database db.sqlite3, data tersebut akan dikumpulkan sesuai field yang ada lalu dibungkus dalam sebuah variabel yaitu context. 
+  Mengapa Diwajibkan Menambahkan `{% csrf_token %}`:
+  - Digunakan untuk mencegah serangan CSRF (Cross-Site Request Forgery)
+  * Tag ini menghasilkan token rahasia unik yang disisipkan sebagai *hidden input* pada form.
+  * Saat form dikirimkan via metode `POST`, middleware Django memverifikasi token tersebut. Jika tidak cocok/tidak ada, Django menolak akses (`403 Forbidden`) untuk memastikan permintaan benar-benar berasal dari pengguna sah, bukan dari oknum berbahaya yang tak teridentifikasi
 
-    Setelah data yang dibutuhkan sudah siap maka selanjutnya data tersebut akan masuk ke file education.html. Data yang diambil dari database akan ditampilkan melalui variabel penampung (contohnya {{ edu.institution }} dsb). Django akan otomatis menampilkan data sesuai variabel penampungnya yang sudah diatur dalam models.py dan , jika datanya masih kosong maka django akan menampilkan data yang berada di tag {% empty %} untuk menampilkan pesan alternatif. Setelah semua data berhasil ditempelkan ke dalam file HTML, Django akan mengeiim kembali hasilnya agar bisa dilihat oleh pengguna.
+2. Pada Tutorial 03, kita membahas format data JSON dan XML. Mengapa JSON lebih disukai dalam pengembangan aplikasi web modern dibandingkan XML?
+    
+    - Ukuran Data Lebih Ringkas: JSON berbasis pasangan *key-value* tanpa tag pembuka/penutup yang tebal seperti pada XML `<item>value</item>`, sehingga menghemat konsumsi bandwidth dan mempercepat transfer data.
+    - Integrasi Alami dengan JavaScript: JSON atau JavaScript Object Notation secara default didukung oleh JavaScript. Data dapat langsung diubah menjadi objek JavaScript menggunakan `.json()` pada Fetch API tanpa perlu parser khusus.
+    - Keterbacaan (*Readability*): Strukturnya jauh lebih bersih, sederhana sehingga mudah dipahami oleh manusia.
 
-    Dalam pengerjaannya sendiri saya bayak memnggunakan bantuan Gemini untuk membantu saya memahami alur yang terjadi pada model MVT serta mengklarifikasi tiap langkah yang dijelaskan di tutorial agar saya lebih paham suatu langkah itu sebenarnya apa yang terjadi di balik layar, apa perannya dalam model MVT dan mengapa alur langkahnya harus begini.
+3. Jelaskan alur yang terjadi saat kamu menggunakan fungsi view untuk mengembalikan data portofoliomu dalam bentuk JSON. Mengapa kita perlu melakukan proses serialization pada model Django sebelum datanya dikembalikan?
 
-2. Mengapa data untuk bagian portofolio baru sebaiknya disimpan pada model dan tidak ditulis langsung di dalam template? Jelaskan dampaknya terhadap kemudahan pemeliharaan dan pengembangan aplikasi.
+    Alur Pengembalian Data Portofolio dalam Bentuk JSON:**
+    - **HTTP Request:** browser mengirimkan permintaan `GET` ke endpoint API.
+    - **Queryset Retrieval:** Fungsi *view* Django mengambil data dari database via ORM (contoh: `Projects.objects.all()`).
+    - **Serialization:** Objek Python dikonversi menjadi format JSON menggunakan serializer Django atau `JsonResponse`.
+    - **HTTP Response:** Klien menerima respon berformat `application/json`.
 
-    Tujuan data disimpan dalam model adalah untuk memisahkan cara menyimpan dan menampilkan data. Template sendiri bertipe HTML yang berfungsi untuk mengatur struktur visual sedangkan models berfungsi untuk megatur struktur data pada database. Jika data ini langsung ditulis di HTML (Hardcoded) sebenarnya tidak masalah dalam skala kecil, namun saat proyek semakin besar ini menjadi tidak fleksibel karena tiap kali kita ingin membuat perubahan maka kita perlu mencari kode yang ingin kita ubah secara manual diantara ratusan baris, jika data ini terletak di beberapa halaman maka kita perlu mencari dan merubah data tersebut secara manual satu-per-satu. Hal ini juga membuat kode rawan rusak karena banyak perubahan yang dilakukan hanya untuk merubah satu data. Oleh karena itu maka kita sebaiknya menggunakan database agar lebih aman dan lebih fleklsibel untuk melakukan perubahan data dalam proyek.
+    Mengapa Perlu Melakukan Serialization:
+    - Konversi Data: Serialization mengubah objek kompleks menjadi string teks standar (JSON) agar dapat dibaca, diproses, dan ditampilkan oleh ke user.
 
-3. Apa perbedaan fungsi makemigrations dan migrate pada Django? Berikan contoh perubahan model yang mengharuskanmu menjalankan kedua perintah tersebut.
+## AI Disclosure 
 
-    Perintah makemigrations sendiri berfungsi untuk membaca serta memeriksa setiap perubahan yang ingin kita lakukan dalam models.py (contohnya menambah class baru atau field pada classs yang sudah ada). Django akan seecara otomatis membuat blueprint dari models.py yang baru dalam bentuk file yang akan disimpan di folder migrations.
+1. Tools AI yang Digunakan
+* Generative AI Tool: Gemini AI
+* Penggunaan Utama: Membantu menyusun layout CSS dan membantu memahami alur form serta membantu memahami kegunaan serta membuat file file_experience_delete dalam folder components, selain itu juga membantu memahami cara memakais postman walaupun saat dicoba belum berhasil
 
-    Jika kita jalankan perintah migrate maka python akan mengeksekusi perubahan yang kita tulis dengan cara memodifikasi database dalam db.sqlite3, ini adalah penyebabnya mengapa kita perlu menulis makemigrations dan migrate ketika melakukan perubahan dalam models.py karena perintah ini yang sebenarnya mengeksekusi perubahan dalam database. 
+2. Strategi Prompting
+* Context-First Prompting: Memberikan konteks penuh kode file Django (`views.py`, `models.py`, `experience.html`) dan aturan/konvensi proyek sebelum meminta solusi.
+* Iterative & Constraint-Based Prompting: Menegaskan batasan khusus secara eksplisit, seperti "JANGAN menggunakan inline styles/hardcode style di tag HTML, gunakan class CSS eksternal", "Ubah dari Client-Side Rendering ke Server-Side Rendering (SSR)".
+* Verify before execute: Sebelum AI mengeksekusi atau menulis ulang kode, instruksi diberikan untuk **menjelaskan penyebab masalah dan alur logika perubahan terlebih dahulu**. Hal saya lakukan untuk menghindari kesalahpahaman alur program, memastikan rencana perubahan sesuai dengan arsitektur Django (SSR), serta mencegah *refactoring* tak terduga yang merusak komponen HTML/CSS yang sudah rapi serta mempelajari penerapan teknis pada tiap langkah.
 
-    Contoh perubahan model yang mengharuskan saya menjalankan kedua perintah ini adalah ketika saya pertama kali membuat class education, field yang tulis adalah nama institusi, posisi pendidikan, durasi, dan deskripsi. Tak lama setelah saya migrate, saya berpikir jika tampilannya akan lebih baik jika saya menambah logo institusi. Jadi saya kembali ke file models dan menambah field logo_url yang akan menjadi variabel penampung untuk menampilkan logo. Setelah saya tambahkan maka saya jalankan perintah makemigrations dan migrate agar perubahan ini terjadi di database. 
+3. Analisis Kritis Keterbatasan AI & Perbaikan Manual
+* Penanganan URL Pattern & Parameter Context: AI sempat menyarankan pemanggilan `{% include %}` tanpa meneruskan konteks variabel `with experience=item`, yang menyebabkan eror `NoReverseMatch` pada Django. 
+**Perbaikan Manual:** Memperbaiki passing variabel context pada loop template Django secara manual.
+* Kepatuhan Class CSS Internal: AI sempat menyusun elemen dengan class generik (`.btn`, `.btn-primary`) atau menyisipkan tag `<style>` inline. 
+**Perbaikan Manual:** Menghapus seluruh tag `<style>` buatan AI dan menyelaraskan class HTML yang sudah ditulis (`.button`, `.project-header`, `.project-actions`).
 
-
+4. Log / Bukti Prompting
+> *Daftar ringkasan prompt/interaksi utama dengan AI disajikan dalam potongan di bawah:*
+> - **User:** *"Mengapa experience tidak menggunakan django template rendering dan malah javascript? apakah bisa diubah?"*
+> - **User:** *"Mengapa style disini, kan sudah diinstruksikan JANGAN HARDCODE"*
+> - **User:** *"Hindari penggunaan tag `<style>` lokal maupun atribut `style` (inline CSS) secara langsung pada elemen HTML. Seluruh penataan tampilan wajib menggunakan kelas CSS dari berkas stylesheet eksternal."*
 
