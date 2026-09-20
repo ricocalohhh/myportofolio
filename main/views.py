@@ -20,49 +20,44 @@ def show_main(request):
     return render(request, "index.html", context)
 
 def show_experience(request):
+    experience_list = Experience.objects.all() # ambil data dari database
     context = {
-        "name": "Enrico Oscar Harits Caloh",
-        "experience_list": Experience.objects.all(),
+        'experience_list': experience_list,
     }
     return render(request, "experience.html", context)
 
-def show_experience(request):
-    experience_list = Experience.objects.all().order_by('-started_at')
-    context = {
-        'experience_list': experience_list
-    }
-    return render(request, 'experience.html', context)
-
 def create_experience(request):
-    form = ExperienceForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Pengalaman baru berhasil ditambahkan!")
-        return redirect("main:show_experience")
-
+    if request.method == 'POST':
+        form = ExperienceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('main:show_experience')
+    else:
+        form = ExperienceForm()
+    
     context = {
-        "form": form,
+        'form': form,
+        'page_title': 'Add New Experience',
+        'button_text': 'Tambah Pengalaman',
     }
-    return render(request, "experience_form.html", context)
+    return render(request, 'experience_form.html', context)
 
 def edit_experience(request, id):
-    # Ambil objek berdasarkan ID, atau tampilkan 404 jika tidak ditemukan
     experience = get_object_or_404(Experience, pk=id)
-
-    # Masukkan instance=experience agar form terisi dengan data lama
-    form = ExperienceForm(request.POST or None, instance=experience)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Data pengalaman berhasil diperbarui!")
-        return redirect("main:show_experience")
-
+    if request.method == 'POST':
+        form = ExperienceForm(request.POST, instance=experience)
+        if form.is_valid():
+            form.save()
+            return redirect('main:show_experience')
+    else:
+        form = ExperienceForm(instance=experience)
+    
     context = {
-        "form": form,
-        "experience": experience,
+        'form': form,
+        'page_title': 'Edit Experience',
+        'button_text': 'Simpan Perubahan',
     }
-    return render(request, "edit_experience.html", context)
+    return render(request, 'experience_form.html', context)
 
 def delete_experience(request, id):
     # Ambil objek berdasarkan ID UUID

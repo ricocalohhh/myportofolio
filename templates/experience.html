@@ -5,89 +5,50 @@
 {% endblock meta %}
 
 {% block content %}
-    <main class="main-content">
-        <section class="experience-section" id="experience">
-            <div class="container">
-                <p class="section-kicker">Perjalanan saya sejauh ini</p>
-                
-                <!-- Header & Tombol -->
-                <div class="experience-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h1 style="margin: 0;">Experience</h1>
-                    
-                    <!-- Tombol Tambah Pengalaman -->
-                    <a href="{% url 'main:create_experience' %}" class="btn btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; background-color: #2563eb; color: white; border-radius: 0.375rem; font-weight: 500;">
-                        + Tambah Pengalaman
-                    </a>
-                </div>
-
-                <div class="experience-grid" id="experience_cards">
-                </div>
-            </div>
-        </section>
-    </main>
-
-<script>
-    async function getExperiences() {
-        // Mengambil data dari endpoint JSON
-        const response = await fetch("{% url 'main:get_experience_json' %}");
-        
-        // DESERIALISASI: Mengubah string JSON dari server menjadi objek JavaScript
-        const experiences = await response.json();
-        return experiences;
-    }
-
-    async function refreshExperience() {
-        const container = document.getElementById("experience_cards");
-        container.innerHTML = ""; // Bersihkan isi container sebelum memuat data baru
-
-        const experiences = await getExperiences();
-
-        // Tampilkan pesan jika data kosong
-        if (experiences.length === 0) {
-            container.innerHTML = `<p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>`;
-            return;
-        }
-
-        // Mapping kategori 
-        const categoryLabels = {
-            'internship': 'Internship',
-            'research': 'Research',
-            'volunteer': 'Volunteer',
-            'part-time': 'Part-Time',
-            'full-time': 'Full-Time',
-            'freelance': 'Freelance'
-        };
-
-        // Render setiap item data hasil deserialisasi ke dalam HTML
-        experiences.forEach((item) => {
-            const fields = item.fields;
-            const categoryDisplay = categoryLabels[fields.category] || fields.category;
+<main class="main-content">
+    <section class="experience-section" id="experience">
+        <div class="container">
+            <p class="hero-kicker">Perjalanan Saya Sejauh Ini</p>
             
-            const isOngoingStatus = (fields.ended_at === null)
-                ? `<p class="experience-status status-ongoing">⚡ Sedang berlangsung</p>`
-                : `<p class="experience-status status-completed">✅ Selesai</p>`;
+            <!-- Header Halaman (Sama Seperti Projects) -->
+            <div class="project-header">
+                <h1>Experience</h1>
+                <a href="{% url 'main:create_experience' %}" class="button project-add-button">
+                    <span>+</span> Tambah Pengalaman
+                </a>
+            </div>
 
-            const cardHTML = `
-                <article class="experience-card">
-                    <span class="experience-category">${categoryDisplay}</span>
-                    <h2>${fields.title}</h2>
-                    <p class="experience-description">${fields.description}</p>
-                    ${isOngoingStatus}
+            <!-- Grid Kartu Pengalaman -->
+            {% if not experience_list %}
+                <div class="empty-state-card">
+                    <p class="empty-state-title">Belum ada pengalaman yang ditambahkan.</p>
+                </div>
+            {% else %}
+                <div class="experience-grid project-grid">
+                    {% for item in experience_list %}
+                        <article class="experience-card">
+                            <div>
+                                <span class="experience-category">{{ item.category|title }}</span>
+                                <h2>{{ item.title }}</h2>
+                                <p class="experience-description">{{ item.description }}</p>
 
-                    <div class="experience-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                        <a href="/experience/${item.pk}/edit/" class="btn-edit" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #f59e0b; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">
-                            Edit
-                        </a>
-                        <a href="/experience/${item.pk}/delete/" class="btn-delete" style="text-decoration: none; padding: 0.35rem 0.8rem; background-color: #ef4444; color: white; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;" onclick="return confirm('Apakah Anda yakin ingin menghapus pengalaman ini?');">
-                            Delete
-                        </a>
-                    </div>
-                </article>
-            `;
-            container.innerHTML += cardHTML;
-        });
-    }
+                                {% if not item.ended_at %}
+                                    <p class="experience-status status-ongoing">⚡ Sedang berlangsung</p>
+                                {% else %}
+                                    <p class="experience-status status-ongoing">✅ Selesai</p>
+                                {% endif %}
+                            </div>
 
-    refreshExperience();
-</script>
+                            <!-- Pembungkus Tombol Aksi (Sama Seperti Projects) -->
+                            <div class="project-actions">
+                                <a href="{% url 'main:edit_experience' item.id %}" class="button">Edit</a>
+                                {% include "components/experience_delete_modal.html" with experience=item %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+</main>
 {% endblock content %}

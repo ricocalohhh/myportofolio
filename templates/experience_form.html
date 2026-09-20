@@ -1,24 +1,32 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block meta %}
+    <title>{{ page_title }} - {{ name }}</title>
+{% endblock meta %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 2rem auto; padding: 1.5rem; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    <h1 style="margin-bottom: 1.5rem; font-size: 1.5rem;">Tambah Pengalaman Baru</h1>
-
-    <form method="POST">
-        {% csrf_token %}
-        
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-            {{ form.as_p }}
-        </div>
-
-        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
-            <button type="submit" style="padding: 0.5rem 1.5rem; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Simpan
-            </button>
-            <a href="{% url 'main:show_experience' %}" style="text-decoration: none; color: #6b7280;">
-                Batal
-            </a>
-        </div>
-    </form>
-</div>
-{% endblock %}
+    <main>
+        <section class="experience-section">
+            <div class="container">
+                <h1>{{ page_title }}</h1>
+                
+                <form method="post" action="" class="project-form">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <p class="form-error">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" class="button">{{ button_text }}</button>
+                    <a href="{% url 'main:show_experience' %}" class="button button-secondary">Batal</a>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock content %}

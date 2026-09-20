@@ -52,13 +52,6 @@ class ProjectForm(ModelForm):
         }
 
 class ExperienceForm(ModelForm):
-    # Langsung panggil URLField tanpa awalan "forms."
-    thumbnail = URLField(
-        required=False,
-        label="URL Gambar / Logo (Opsional)",
-        widget=URLInput(attrs={"placeholder": "https://example.com/logo.png"})
-    )
-
     class Meta:
         model = Experience
         fields = [
@@ -74,11 +67,39 @@ class ExperienceForm(ModelForm):
             "category": "Kategori",
             "description": "Deskripsi Pengalaman",
             "ended_at": "Tanggal Selesai (Kosongkan jika masih berlangsung)",
+            "thumbnail": "URL Gambar / Logo (Opsional)",
         }
 
         widgets = {
-            "title": TextInput(attrs={"placeholder": "Asisten Dosen PBP"}),
-            "category": Select(),
-            "description": Textarea(attrs={"placeholder": "Membantu mahasiswa...", "rows": 3}),
-            "ended_at": DateInput(attrs={"type": "date"}),
+            "title": TextInput(
+                attrs={
+                    "placeholder": "Asisten Dosen PBP",
+                    "maxlength": 255,
+                    "class": "form-control",
+                }
+            ),
+            "category": Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "description": Textarea(
+                attrs={
+                    "placeholder": "Membantu mahasiswa...",
+                    "rows": 3,
+                    "class": "form-control",
+                }
+            ),
+            "ended_at": DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "form-control custom-date",
+                }
+            ),
+            "thumbnail": URLInput(
+                attrs={
+                    "placeholder": "https://example.com/logo.png",
+                    "class": "form-control",
+                }
+            ),
         }
