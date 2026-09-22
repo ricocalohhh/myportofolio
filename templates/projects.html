@@ -14,9 +14,11 @@
             <!-- Header Halaman -->
             <div class="project-header">
                 <h1>Projects</h1>
-                <a href="{% url 'main:create_project' %}" class="button project-add-button">
-                    <span>+</span> Tambah Proyek
-                </a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_project' %}" class="button project-add-button">
+                        <span aria-hidden="true">+</span> Tambah Proyek
+                    </a>
+                {% endif %}
             </div>
 
             <!-- Form Pencarian -->
@@ -55,7 +57,10 @@
                                     <a href="{{ project.project_url }}" target="_blank" class="button">Lihat Proyek</a>
                                 {% endif %}
                                 
-                                {% include "components/project_delete_modal.html" with project=project %}
+                                {% if user.is_superuser %}
+                                    {% include "components/project_star.html" with project=project %}
+                                    {% include "components/project_delete_modal.html" with project=project %}
+                                {% endif %}
                             </div>
                         </article>
                     {% endfor %}
