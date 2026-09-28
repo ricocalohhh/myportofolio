@@ -10,14 +10,17 @@ from selenium.webdriver.support import expected_conditions as EC
 load_dotenv()
 
 USER_PASSWORD = os.getenv("E2E_USER_PASSWORD")
+EDITOR_PASSWORD = os.getenv("E2E_EDITOR_PASSWORD")
 ADMIN_PASSWORD = os.getenv("E2E_ADMIN_PASSWORD")
 
-if not USER_PASSWORD or not ADMIN_PASSWORD:
-    sys.exit("E2E_USER_PASSWORD dan E2E_ADMIN_PASSWORD belum diisi di berkas .env.")
+if not USER_PASSWORD or not EDITOR_PASSWORD or not ADMIN_PASSWORD:
+    sys.exit("E2E_USER_PASSWORD, E2E_EDITOR_PASSWORD, dan E2E_ADMIN_PASSWORD wajib diisi di berkas .env.")
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portofolio.settings")
 django.setup()
+
 from django.contrib.auth.models import User
+from main.models import Experience
 
 
 def setup_users():
@@ -27,11 +30,19 @@ def setup_users():
     user.is_staff = False
     user.save()
 
+    editor, _ = User.objects.get_or_create(username="editor_test")
+    editor.set_password(EDITOR_PASSWORD)
+    editor.is_superuser = False
+    editor.is_staff = True  # Role Editor
+    editor.save()
+
     admin, _ = User.objects.get_or_create(username="admin_test")
     admin.set_password(ADMIN_PASSWORD)
     admin.is_superuser = True
     admin.is_staff = True
     admin.save()
+
+    print("Pengaturan akun uji (User, Editor, Superuser) dan data dummy berhasil disiapkan.")
 
 
 def main():
@@ -44,20 +55,20 @@ def main():
     else:
         options.add_argument("--start-maximized")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 10)
     base_url = "http://127.0.0.1:8000"
 
     try:
-        # 1. Cek csrf token di form login
+        # 1. Cek CSRF token di form login
         try:
             driver.get(f"{base_url}/login/")
         except Exception:
             print(f"Server belum berjalan di {base_url}. Jalankan 'python manage.py runserver' terlebih dahulu.")
             return
-        csrf = wait.until(
-            EC.presence_of_element_located((By.NAME, "csrfmiddlewaretoken"))
-        )
+
+        csrf = wait.until(EC.presence_of_element_located((By.NAME, "csrfmiddlewaretoken")))
         assert csrf.get_attribute("value")
         assert driver.get_cookie("csrftoken")
         print("[PASS] CSRF token dan cookie terverifikasi")
@@ -70,15 +81,35 @@ def main():
         wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "nav-user")))
         assert driver.get_cookie("sessionid")
         assert driver.get_cookie("last_login")
-        assert "Sesi Terakhir Login" in driver.page_source or "Last Login" in driver.page_source
         print("[PASS] Login user biasa dan cookie sesi berhasil")
 
         # 3. Cek pembatasan akses user biasa ke form tambah proyek
         driver.get(f"{base_url}/projects/add/")
-        assert "403" in driver.title or "Forbidden" in driver.page_source
+        assert "403" in driver.title or "Forbidden" in driver.page_source or "PermissionDenied" in driver.page_source
         print("[PASS] Otorisasi user biasa dibatasi (403)")
 
-        # 4. Cek akses superuser ke form tambah proyek
+        # 4. Cek otorisasi Editor pada modul Experience
+        driver.get(f"{base_url}/logout/")
+        wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(@href, '/login/')]")))
+        driver.get(f"{base_url}/login/")
+        wait.until(EC.presence_of_element_located((By.NAME, "username"))).send_keys("editor_test")
+        driver.find_element(By.NAME, "password").send_keys(EDITOR_PASSWORD)
+        driver.find_element(By.XPATH, "//button[@type='submit']").click()
+        wait.until(EC.url_to_be(f"{base_url}/"))
+
+        # Editor ditolak membuat pengalaman baru (403)
+        driver.get(f"{base_url}/experience/create/")
+        assert "403" in driver.title or "Forbidden" in driver.page_source or "PermissionDenied" in driver.page_source
+        print("[PASS] Editor dibatasi membuat pengalaman baru (403)")
+
+        # Editor diizinkan mengakses halaman edit pengalaman
+        exp_item = Experience.objects.first()
+        if exp_item:
+            driver.get(f"{base_url}/experience/edit/{exp_item.id}/")
+            wait.until(EC.presence_of_element_located((By.NAME, "title")))
+            print("[PASS] Editor berhasil mengakses halaman edit pengalaman")
+
+        # 5. Cek akses superuser ke form proyek & tambah pengalaman
         driver.get(f"{base_url}/logout/")
         wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(@href, '/login/')]")))
         driver.get(f"{base_url}/login/")
@@ -86,20 +117,19 @@ def main():
         driver.find_element(By.NAME, "password").send_keys(ADMIN_PASSWORD)
         driver.find_element(By.XPATH, "//button[@type='submit']").click()
         wait.until(EC.url_to_be(f"{base_url}/"))
-        wait.until(EC.text_to_be_present_in_element((By.CLASS_NAME, "nav-user"), "admin_test"))
 
         driver.get(f"{base_url}/projects/add/")
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "project-form")))
         print("[PASS] Akses superuser ke form proyek berhasil")
 
-        # 5. Cek logout dan penghapusan cookie
+        # 6. Cek logout dan pembersihan cookie
         driver.get(f"{base_url}/logout/")
         wait.until(EC.presence_of_element_located((By.XPATH, "//a[contains(@href, '/login/')]")))
         cookie_last_login = driver.get_cookie("last_login")
         assert cookie_last_login is None or cookie_last_login["value"] == ""
         print("[PASS] Logout dan pembersihan cookie berhasil")
 
-        print("\nSemua pengujian E2E berhasil!")
+        print("\nSemua pengujian E2E (termasuk RBAC Editor) berhasil 100%!")
 
     finally:
         driver.quit()

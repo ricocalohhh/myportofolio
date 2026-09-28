@@ -10,12 +10,15 @@
         <div class="container">
             <p class="hero-kicker">Perjalanan Saya Sejauh Ini</p>
             
-            <!-- Header Halaman (Sama Seperti Projects) -->
+            <!-- Header Halaman -->
             <div class="project-header">
                 <h1>Experience</h1>
-                <a href="{% url 'main:create_experience' %}" class="button project-add-button">
-                    <span>+</span> Tambah Pengalaman
-                </a>
+                <!-- Hanya Superuser yang dapat melihat tombol Tambah -->
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_experience' %}" class="button project-add-button">
+                        <span>+</span> Tambah Pengalaman
+                    </a>
+                {% endif %}
             </div>
 
             <!-- Grid Kartu Pengalaman -->
@@ -39,10 +42,32 @@
                                 {% endif %}
                             </div>
 
-                            <!-- Pembungkus Tombol Aksi (Sama Seperti Projects) -->
+                            <!-- Bagian Fitur Interaktif Star -->
+                            <div class="star-section" style="margin-top: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                {% if user.is_authenticated %}
+                                    {% include "components/experience_star.html" with item=item %}
+                                {% else %}
+                                    <a href="{% url 'main:login' %}" style="text-decoration: none; font-size: 0.85rem; color: #666;">
+                                        Login untuk memberi star
+                                    </a>
+                                {% endif %}
+
+                                <span style="font-weight: bold; font-size: 0.9rem;">
+                                    {{ item.starred_by.count }} Star{% if item.starred_by.count != 1 %}s{% endif %}
+                                </span>
+                            </div>
+
+                            <!-- Pembungkus Tombol Aksi Berdasarkan Hak Akses -->
                             <div class="project-actions">
-                                <a href="{% url 'main:edit_experience' item.id %}" class="button">Edit</a>
-                                {% include "components/experience_delete_modal.html" with experience=item %}
+                                <!-- Tombol Edit: Hanya Editor (is_staff) atau Superuser -->
+                                {% if user.is_staff or user.is_superuser %}
+                                    <a href="{% url 'main:edit_experience' item.id %}" class="button">Edit</a>
+                                {% endif %}
+
+                                <!-- Tombol Hapus: Hanya Superuser -->
+                                {% if user.is_superuser %}
+                                    {% include "components/experience_delete_modal.html" with experience=item %}
+                                {% endif %}
                             </div>
                         </article>
                     {% endfor %}

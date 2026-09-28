@@ -1,0 +1,10 @@
+<form method="post" action="{% url 'main:toggle_star_experience' item.id %}" class="star-form" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit"
+            class="button button-star{% if user in item.stars.all %} is-starred{% endif %}"
+            title="{% if item.stars.all %}Dibintangi oleh {{ item.stars.all|join:', ' }}{% else %}Jadilah yang pertama memberi star{% endif %}">
+        <span aria-hidden="true">★</span>
+        {% if user in item.stars.all %}Unstar{% else %}Star{% endif %}
+        <span class="star-count">{{ item.stars.count }}</span>
+    </button>
+</form>

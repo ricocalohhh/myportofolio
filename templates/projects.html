@@ -52,13 +52,18 @@
                             </div>
 
                             <!-- Tombol Aksi -->
-                            <div class="project-actions">
+                            <div class="project-actions" style="margin-top: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                 {% if project.project_url %}
                                     <a href="{{ project.project_url }}" target="_blank" class="button">Lihat Proyek</a>
                                 {% endif %}
                                 
-                                {% if user.is_superuser %}
+                                <!-- Star Button: Ditampilkan untuk SEMUA pengguna yang sudah login -->
+                                {% if user.is_authenticated %}
                                     {% include "components/project_star.html" with project=project %}
+                                {% endif %}
+
+                                <!-- Delete Button: Khusus Superuser -->
+                                {% if user.is_superuser %}
                                     {% include "components/project_delete_modal.html" with project=project %}
                                 {% endif %}
                             </div>

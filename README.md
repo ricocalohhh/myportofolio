@@ -1,53 +1,33 @@
-### Tugas 2
+### Tugas 3
 
-1. Jelaskan mengapa kita menggunakan ModelForm pada Django alih-alih membuat form HTML secara manual. Selain itu, jelaskan pula mengapa kita diwajibkan menambahkan {% csrf_token %} pada form tersebut!
+Deskripsi Proyek & Fitur Utama
 
-  - Efisiensi (DRY - Don't Repeat Yourself):`ModelForm` secara otomatis membangun input form berdasarkan field yang terdefinisi pada Model Django tanpa perlu menulis tag `<input>` secara manual di HTML.
-  - Validasi Otomatis: Menangani validasi tipe data, batas karakter (`max_length`), serta status wajib isi (*required/blank*) di tingkat server, lalu mengembalikan pesan eror secara otomatis jika input tidak valid.
-  - Kemudahan Penyimpanan: Memangkas proses *extract* data dari `request.POST` secara manual karena penyimpanan data ke database cukup dengan memanggil method `.save()`.
-
-  Mengapa Diwajibkan Menambahkan `{% csrf_token %}`:
-  - Digunakan untuk mencegah serangan CSRF (Cross-Site Request Forgery)
-  * Tag ini menghasilkan token rahasia unik yang disisipkan sebagai *hidden input* pada form.
-  * Saat form dikirimkan via metode `POST`, middleware Django memverifikasi token tersebut. Jika tidak cocok/tidak ada, Django menolak akses (`403 Forbidden`) untuk memastikan permintaan benar-benar berasal dari pengguna sah, bukan dari oknum berbahaya yang tak teridentifikasi
-
-2. Pada Tutorial 03, kita membahas format data JSON dan XML. Mengapa JSON lebih disukai dalam pengembangan aplikasi web modern dibandingkan XML?
-    
-    - Ukuran Data Lebih Ringkas: JSON berbasis pasangan *key-value* tanpa tag pembuka/penutup yang tebal seperti pada XML `<item>value</item>`, sehingga menghemat konsumsi bandwidth dan mempercepat transfer data.
-    - Integrasi Alami dengan JavaScript: JSON atau JavaScript Object Notation secara default didukung oleh JavaScript. Data dapat langsung diubah menjadi objek JavaScript menggunakan `.json()` pada Fetch API tanpa perlu parser khusus.
-    - Keterbacaan (*Readability*): Strukturnya jauh lebih bersih, sederhana sehingga mudah dipahami oleh manusia.
-
-3. Jelaskan alur yang terjadi saat kamu menggunakan fungsi view untuk mengembalikan data portofoliomu dalam bentuk JSON. Mengapa kita perlu melakukan proses serialization pada model Django sebelum datanya dikembalikan?
-
-    Alur Pengembalian Data Portofolio dalam Bentuk JSON:**
-    - **HTTP Request:** browser mengirimkan permintaan `GET` ke endpoint API.
-    - **Queryset Retrieval:** Fungsi *view* Django mengambil data dari database via ORM (contoh: `Projects.objects.all()`).
-    - **Serialization:** Objek Python dikonversi menjadi format JSON menggunakan serializer Django atau `JsonResponse`.
-    - **HTTP Response:** Klien menerima respon berformat `application/json`.
-
-    Mengapa Perlu Melakukan Serialization:
-    - Konversi Data: Serialization mengubah objek kompleks menjadi string teks standar (JSON) agar dapat dibaca, diproses, dan ditampilkan oleh ke user.
+- **Autentikasi & RBAC:** Fitur Register, Login, Logout dengan hak akses berbeda (Anonymous, Authenticated User, dan Superuser).
+- **Fitur Interaktif Star:** Pengguna terautentikasi dapat memberikan/membatalkan *star* pada *Projects* dan *Experience* yang terhubung menggunakan relasi `ManyToManyField`.
+- **Integritas API & Keamanan Data:** Endpoint JSON (`/api/projects/` dan `/experience/json/`) yang telah dibatasi menggunakan argumen `fields` pada serializer agar tidak membocorkan data sensitif pengguna (*hash password*, email, kredensial).
 
 ## AI Disclosure 
 
 1. Tools AI yang Digunakan
 * Generative AI Tool: Gemini AI
-* Penggunaan Utama: Membantu menyusun layout CSS dan membantu memahami alur form serta membantu memahami kegunaan serta membuat file file_experience_delete dalam folder components, selain itu juga membantu memahami cara memakais postman walaupun saat dicoba belum berhasil
+* Penggunaan Utama: Membantu mengatasi exception Django (related_name clash, NoReverseMatch), mengimplementasikan relasi ManyToManyField untuk fitur Star, serta mengamankan endpoint JSON dari risiko kebocoran data sensitif.
 
 2. Strategi Prompting
-* Context-First Prompting: Memberikan konteks penuh kode file Django (`views.py`, `models.py`, `experience.html`) dan aturan/konvensi proyek sebelum meminta solusi.
-* Iterative & Constraint-Based Prompting: Menegaskan batasan khusus secara eksplisit, seperti "JANGAN menggunakan inline styles/hardcode style di tag HTML, gunakan class CSS eksternal", "Ubah dari Client-Side Rendering ke Server-Side Rendering (SSR)".
-* Verify before execute: Sebelum AI mengeksekusi atau menulis ulang kode, instruksi diberikan untuk **menjelaskan penyebab masalah dan alur logika perubahan terlebih dahulu**. Hal saya lakukan untuk menghindari kesalahpahaman alur program, memastikan rencana perubahan sesuai dengan arsitektur Django (SSR), serta mencegah *refactoring* tak terduga yang merusak komponen HTML/CSS yang sudah rapi serta mempelajari penerapan teknis pada tiap langkah.
+* Context-First Prompting: Memberikan konteks penuh kode file Django (`views.py`, `models.py`, `experience.html`), serta memberi spesifikasi tugas sebelum meminta bantuan perbaikan.
+* Iterative & Constraint-Based Prompting: Menegaskan batasan khusus secara eksplisit, seperti "Amankan endpoint JSON agar tidak membocorkan data sensitif user" dan "Gunakan Django Template Rendering untuk menampilkan data proyek dan star".
+* Verify before execute: Meminta AI menjelaskan penyebab eror dan alur logikanya terlebih dahulu sebelum menuliskan ulang kode agar memahami penerapan teknis pada tiap langkah.
 
 3. Analisis Kritis Keterbatasan AI & Perbaikan Manual
-* Penanganan URL Pattern & Parameter Context: AI sempat menyarankan pemanggilan `{% include %}` tanpa meneruskan konteks variabel `with experience=item`, yang menyebabkan eror `NoReverseMatch` pada Django. 
-**Perbaikan Manual:** Memperbaiki passing variabel context pada loop template Django secara manual.
-* Kepatuhan Class CSS Internal: AI sempat menyusun elemen dengan class generik (`.btn`, `.btn-primary`) atau menyisipkan tag `<style>` inline. 
-**Perbaikan Manual:** Menghapus seluruh tag `<style>` buatan AI dan menyelaraskan class HTML yang sudah ditulis (`.button`, `.project-header`, `.project-actions`).
+* Bentrokan Related Name ORM: AI awalnya merekomendasikan `ManyToManyField` tanpa related_name unik pada dua model berbeda (Project dan Experience), memicu error clash accessor.
+**Perbaikan Manual:** Menambahkan `related_name="starred_projects"` dan `related_name="starred_experiences"` secara eksplisit pada models.py.
+* Hilangnya Relasi M2M pada Deserialisasi JSON: Penggunaan `serializers.deserialize` buatan AI membuat objek kehilangan relasi live database sehingga tombol Star tidak muncul. 
+**Perbaikan Manual:** Mengambil daftar ID dari hasil deserialisasi, lalu melakukan query ulang via `Project.objects.filter(pk__in=project_ids)` agar relasi `starred_by` tetap terbaca di template HTML.
+* Kebocoran Data Sensitif pada JSON API: Secara default `serializers.serialize()` menyertakan seluruh atribut model dan relasi pengguna. 
+**Perbaikan Manual:** embatasi output JSON menggunakan parameter `fields=(...)` pada `get_projects_json` dan `get_experience_json` untuk memastikan data sensitif pengguna tidak terekspos.
 
 4. Log / Bukti Prompting
 > *Daftar ringkasan prompt/interaksi utama dengan AI disajikan dalam potongan di bawah:*
-> - **User:** *"Mengapa experience tidak menggunakan django template rendering dan malah javascript? apakah bisa diubah?"*
-> - **User:** *"Mengapa style disini, kan sudah diinstruksikan JANGAN HARDCODE"*
-> - **User:** *"Hindari penggunaan tag `<style>` lokal maupun atribut `style` (inline CSS) secara langsung pada elemen HTML. Seluruh penataan tampilan wajib menggunakan kelas CSS dari berkas stylesheet eksternal."*
+> - **Pengguna:** *"Terjadi SystemCheckError terkait Reverse Accessor antara model Experience dan Project saat menjalankan makemigrations. Bagaimana cara menangani relasi many-to-many nya?"*
+> - **Pengguna:** *"Pada fungsi show_projects di views.py terdapat logic penanganan JSON dari Tugas 3. Bagian ini mending dipertahankan atau dihapus? Gimana caranya supaya fitur star tetap berjalan aman?""*
+> - **Pengguna:** *"Audit dan pastikan endpoint JSON API tetap berfungsi sesuai spesifikasi Tugas 3 tanpa mengekspos informasi sensitif pengguna."*
 

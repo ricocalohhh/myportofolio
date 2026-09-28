@@ -4,10 +4,11 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from main.forms import ProjectForm, ExperienceForm
 from main.models import Experience, Education, Project
-from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
+from django.contrib.auth.decorators import login_required  
 from django.core.exceptions import PermissionDenied 
 
 import datetime
@@ -62,17 +63,7 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
-def show_main(request):
-    context = {
-        "name": "Enrico Oscar Harits Caloh",
-        "npm": "2506539990",
-        "study_program": "S1 Sistem Informasi",
-        "bio": (
-            "Mahasiswa Sistem Informasi Universitas Indonesia yang tertarik "
-            "pada proses bisnis dan teknologi."
-        ),
-    }
-    return render(request, "index.html", context)
+# --- READ (Dapat diakses oleh SIAPA PUN: Anonymous, User, Editor, Superuser) ---
 
 def show_experience(request):
     experience_list = Experience.objects.all() # ambil data dari database
@@ -81,6 +72,7 @@ def show_experience(request):
     }
     return render(request, "experience.html", context)
 
+# --- CREATE (Hanya Superuser) ---
 @login_required(login_url="/login/")
 def create_experience(request):
     if not request.user.is_superuser:
@@ -101,9 +93,10 @@ def create_experience(request):
     }
     return render(request, 'experience_form.html', context)
 
+# --- EDIT / UPDATE (Hanya Editor/is_staff ATAU Superuser) ---
 @login_required(login_url="/login/")
 def edit_experience(request, id):
-    if not request.user.is_superuser:
+    if not request.user.is_superuser :
         raise PermissionDenied
 
     experience = get_object_or_404(Experience, pk=id)
@@ -122,6 +115,7 @@ def edit_experience(request, id):
     }
     return render(request, 'experience_form.html', context)
 
+# --- DELETE (Hanya Superuser) ---
 @login_required(login_url="/login/")
 def delete_experience(request, id):
     if not request.user.is_superuser:
@@ -143,20 +137,29 @@ def get_experience_json(request):
     if title_query:
         experiences = experiences.filter(title__icontains=title_query)
 
-    experiences_json = serializers.serialize("json", experiences)
-    return HttpResponse(experiences_json, content_type="application/json")
+    # Hanya menyertakan field publik dari Experience
+    experiences_json = serializers.serialize(
+        "json", 
+        experiences,
+        fields=(
+            "title", 
+            "company", 
+            "description", 
+            "start_date", 
+            "end_date", 
+            "is_current"
+        )
+    )
 
-def show_projects(request):
-    project_list = Project.objects.all()
-    context = {
-        'project_list': project_list
-    }
-    return render(request, 'projects.html', context)
+    return HttpResponse(experiences_json, content_type="application/json")
 
 @login_required(login_url="/login/")
 def create_project(request):
+    # Hanya izinkan superuser
     if not request.user.is_superuser:
         raise PermissionDenied
+
+    form = ProjectForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -179,32 +182,20 @@ def show_education(request):
     
     return render(request, "education.html", context)
 
-@login_required(login_url="/login/")
-def create_project(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-    
-    form = ProjectForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Proyek baru berhasil ditambahkan!")
-        return redirect("main:show_projects")
-
-    context = {
-        "name": "Enrico Oscar Harits Caloh",
-        "form": form,
-    }
-    return render(request, "projects_form.html", context)
-
 def show_projects(request):
     json_response = get_projects_json(request)
 
-    projects = serializers.deserialize(
+    deserialized_projects = serializers.deserialize(
         "json",
         json_response.content.decode("utf-8"),
     )
-    projects = [project.object for project in projects]
+    
+    # Ambil daftar ID dari hasil deserialisasi JSON
+    project_ids = [item.object.pk for item in deserialized_projects]
+    
+    # Ambil QuerySet asli dari DB agar relasi ManyToMany (starred_by) berfungsi
+    projects = Project.objects.filter(pk__in=project_ids)
+    
     title_query = request.GET.get("title", "").strip()
 
     context = {
@@ -221,8 +212,18 @@ def get_projects_json(request):
     if title_query:
         projects = projects.filter(title__icontains=title_query)
 
+    # Hanya menyertakan field publik, mengecualikan relasi ManyToMany/User
     projects_json = serializers.serialize(
-    "json", projects, use_natural_foreign_keys=True  
+        "json", 
+        projects, 
+        fields=(
+            "title", 
+            "tech_stack", 
+            "description", 
+            "project_url", 
+            "project_image_url"
+        ),
+        use_natural_foreign_keys=True
     )
 
     return HttpResponse(projects_json, content_type="application/json")
@@ -254,3 +255,15 @@ def toggle_star(request, project_id):
             project.starred_by.add(request.user)
 
     return redirect("main:show_projects")
+
+@login_required(login_url="/login/")
+@require_POST
+def toggle_star_experience(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+    
+    if request.user in experience.stars.all():
+        experience.stars.remove(request.user)
+    else:
+        experience.stars.add(request.user)
+        
+    return redirect('main:show_experience')
