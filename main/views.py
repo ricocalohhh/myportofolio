@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -183,50 +183,44 @@ def show_education(request):
     return render(request, "education.html", context)
 
 def show_projects(request):
-    json_response = get_projects_json(request)
-
-    deserialized_projects = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    
-    # Ambil daftar ID dari hasil deserialisasi JSON
-    project_ids = [item.object.pk for item in deserialized_projects]
-    
-    # Ambil QuerySet asli dari DB agar relasi ManyToMany (starred_by) berfungsi
-    projects = Project.objects.filter(pk__in=project_ids)
-    
     title_query = request.GET.get("title", "").strip()
 
     context = {
-        "name": "Enrico Oscar Harits Caloh",
-        "project_list": projects,
+        "name": "Burhan",
         "title_query": title_query,
+        "form": ProjectForm(),
     }
-    return render(request, "projects.html", context)
+    return render(request, "project.html", context)
 
 def get_projects_json(request):
     title_query = request.GET.get("title", "").strip()
-    projects = Project.objects.all()
+    projects = Project.objects.prefetch_related('starred_by').all()
 
     if title_query:
         projects = projects.filter(title__icontains=title_query)
 
-    # Hanya menyertakan field publik, mengecualikan relasi ManyToMany/User
-    projects_json = serializers.serialize(
-        "json", 
-        projects, 
-        fields=(
-            "title", 
-            "tech_stack", 
-            "description", 
-            "project_url", 
-            "project_image_url"
-        ),
-        use_natural_foreign_keys=True
-    )
+    # Konstruksi data JSON secara manual agar bisa menyisipkan logika Star
+    data = []
+    for project in projects:
+        starred_users = project.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
 
-    return HttpResponse(projects_json, content_type="application/json")
+        data.append({
+            "pk": str(project.id),
+            "fields": {
+                "title": project.title,
+                "description": project.description,
+                "tech_stack": project.tech_stack,
+                "project_url": project.project_url,
+                "project_image_url": project.project_image_url,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            }
+        })
+
+    return JsonResponse(data, safe=False)
 
 @login_required(login_url="/login/")
 def delete_project(request, project_id):
@@ -267,3 +261,21 @@ def toggle_star_experience(request, experience_id):
         experience.stars.add(request.user)
         
     return redirect('main:show_experience')
+
+@require_POST
+def create_project_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
+            status=403,
+        )
+
+    form = ProjectForm(request.POST)
+    if form.is_valid():
+        project = form.save()
+        return JsonResponse(
+            {"message": "Proyek berhasil ditambahkan.", "pk": str(project.id)},
+            status=201,
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)

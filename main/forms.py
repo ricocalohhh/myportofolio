@@ -1,4 +1,6 @@
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateInput, URLField
+from django.core.exceptions import ValidationError  # TAMBAHKAN IMPORT INI
+from django.utils.html import strip_tags           # TAMBAHKAN IMPORT INI
 
 from main.models import Project, Experience
 
@@ -41,15 +43,28 @@ class ProjectForm(ModelForm):
             ),
             "project_url": URLInput(
                 attrs={
-                    "placeholder": "https://github.com/kakBurhan/burhanquestv4",
+                    "placeholder": "https://github.com",
                 }
             ),
             "project_image_url": URLInput(
                 attrs={
-                    "placeholder": "https://drive.google.com/thumbnail?id=...&sz=w1000",
+                    "placeholder": "https://google.com",
                 }
             ),
         }
+
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+        return title
+
+    def clean_tech_stack(self):
+        return strip_tags(self.cleaned_data["tech_stack"]).strip()
+
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()
+
 
 class ExperienceForm(ModelForm):
     class Meta:
