@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -146,6 +146,12 @@ def get_experience_json(request):
 
     return JsonResponse(data, safe=False)
 
+def show_projects(request):
+    context = {
+        'name': request.user.username if request.user.is_authenticated else 'Visitor',
+    }
+    return render(request, "project.html", context) # Pastikan nama template sesuai, misal "projects.html" atau "project.html"
+
 @login_required(login_url="/login/")
 def create_project(request):
     # Hanya izinkan superuser
@@ -164,26 +170,81 @@ def create_project(request):
     }
     return render(request, "create_project.html", context)
 
+# ==================== EDUCATION SECTION ==================== 
 def show_education(request):
     context = {
         'name': 'Enrico Oscar Harits Caloh',
         'npm': '2506539990',
         'study_program': 'S1 Sistem Informasi',
         'bio': 'Student in Information Systems with a strong focus on Finance, Business Development, Project Management, Product Management and Information Systems.',
-        'education_list': Education.objects.all().order_by('-id')
     }
-    
     return render(request, "education.html", context)
 
-def show_projects(request):
-    title_query = request.GET.get("title", "").strip()
+# Endpoint AJAX Get List Data JSON
+def get_education_json(request):
+    educations = Education.objects.all().order_by('-id')
+    data = [
+        {
+            "id": edu.id,  # Atau str(edu.id) jika menggunakan UUID
+            "institution": edu.institution,
+            "degree": edu.degree,
+            "duration": edu.duration,
+            "description": edu.description or "",
+            "logo_url": edu.logo_url or "",
+        }
+        for edu in educations
+    ]
+    return JsonResponse(data, safe=False)
 
-    context = {
-        "name": "Burhan",
-        "title_query": title_query,
-        "form": ProjectForm(),
-    }
-    return render(request, "project.html", context)
+# Endpoint AJAX Create
+@login_required
+@require_POST
+def create_education(request):
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Unauthorized")
+
+    institution = request.POST.get("institution")
+    degree = request.POST.get("degree")
+    duration = request.POST.get("duration")
+    description = request.POST.get("description", "")
+    logo_url = request.POST.get("logo_url", "")
+
+    Education.objects.create(
+        institution=institution,
+        degree=degree,
+        duration=duration,
+        description=description,
+        logo_url=logo_url,
+    )
+    return JsonResponse({"status": "success", "message": "Pendidikan berhasil ditambahkan!"})
+
+# Endpoint AJAX Edit
+@login_required
+@require_POST
+def edit_education(request, id):
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Unauthorized")
+
+    edu = get_object_or_404(Education, pk=id)
+    edu.institution = request.POST.get("institution", edu.institution)
+    edu.degree = request.POST.get("degree", edu.degree)
+    edu.duration = request.POST.get("duration", edu.duration)
+    edu.description = request.POST.get("description", edu.description)
+    edu.logo_url = request.POST.get("logo_url", edu.logo_url)
+    edu.save()
+
+    return JsonResponse({"status": "success", "message": "Pendidikan berhasil diperbarui!"})
+
+# Endpoint AJAX Delete
+@login_required
+@require_POST
+def delete_education(request, id):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("Unauthorized")
+
+    edu = get_object_or_404(Education, pk=id)
+    edu.delete()
+    return JsonResponse({"status": "success", "message": "Pendidikan berhasil dihapus!"})
 
 def get_projects_json(request):
     title_query = request.GET.get("title", "").strip()
