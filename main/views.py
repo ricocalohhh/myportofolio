@@ -182,10 +182,15 @@ def show_education(request):
 
 # Endpoint AJAX Get List Data JSON
 def get_education_json(request):
+    query = request.GET.get("q", "").strip()
     educations = Education.objects.all().order_by('-id')
+
+    if query:
+        educations = educations.filter(institution__icontains=query)
+
     data = [
         {
-            "id": edu.id,  # Atau str(edu.id) jika menggunakan UUID
+            "id": edu.id,
             "institution": edu.institution,
             "degree": edu.degree,
             "duration": edu.duration,

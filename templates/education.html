@@ -20,6 +20,17 @@
                 {% endif %}
             </div>
 
+            <!-- Input Pencarian Education -->
+            <div style="margin-top: 15px; margin-bottom: 25px;">
+                <input 
+                    type="text" 
+                    id="searchEducationInput" 
+                    class="form-control" 
+                    placeholder="Cari berdasarkan nama institusi..." 
+                    oninput="handleEducationSearch(event)"
+                >
+            </div>
+
             <!-- Loading, Empty, & Error State Containers -->
             <div id="education-loading-state" class="loading-state-card" style="display: none; text-align: center; padding: 40px;">
                 <p>Memuat riwayat pendidikan...</p>
@@ -27,7 +38,7 @@
 
             <div id="education-empty-state" class="empty-state-card" style="display: none;">
                 <div class="empty-state-icon">🎓</div>
-                <p class="empty-state">Belum ada riwayat pendidikan yang ditambahkan.</p>
+                <p class="empty-state">Belum ada riwayat pendidikan yang ditemukan.</p>
             </div>
 
             <div id="education-error-state" class="error-state-card" style="display: none; text-align: center; padding: 40px;">
@@ -95,6 +106,19 @@
     const emptyState = document.getElementById('education-empty-state');
     const errorState = document.getElementById('education-error-state');
 
+    let debounceTimer;
+
+    // Logika Debouncing untuk Pencarian
+    function handleEducationSearch(event) {
+        clearTimeout(debounceTimer);
+        const query = event.target.value;
+
+        // Tunggu 300ms setelah pengguna berhenti mengetik
+        debounceTimer = setTimeout(() => {
+            fetchEducation(query);
+        }, 300);
+    }
+
     function displayPageSection({ showLoading = false, showEmpty = false, showError = false, showList = false }) {
         loadingState.style.display = showLoading ? 'block' : 'none';
         emptyState.style.display = showEmpty ? 'block' : 'none';
@@ -109,11 +133,15 @@
         return temp.innerHTML;
     }
 
-    async function fetchEducation() {
+    async function fetchEducation(query = '') {
         try {
             displayPageSection({ showLoading: true });
 
-            const response = await fetch(BASE_EDUCATION_ENDPOINT, {
+            const endpoint = query 
+                ? `${BASE_EDUCATION_ENDPOINT}?q=${encodeURIComponent(query)}` 
+                : BASE_EDUCATION_ENDPOINT;
+
+            const response = await fetch(endpoint, {
                 headers: { 'Accept': 'application/json' }
             });
 
@@ -264,6 +292,6 @@
         }
     };
 
-    document.addEventListener('DOMContentLoaded', fetchEducation);
+    document.addEventListener('DOMContentLoaded', () => fetchEducation());
 </script>
 {% endblock content %}
