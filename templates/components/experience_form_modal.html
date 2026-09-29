@@ -1,0 +1,47 @@
+<div id="add-experience-modal" popover class="project-modal">
+    <div class="project-modal__content">
+        <div class="project-modal__header">
+            <h2 class="project-modal__title">Tambah Pengalaman</h2>
+            <button type="button" 
+                    class="project-modal__close" 
+                    onclick="closeExperienceModal()" 
+                    aria-label="Tutup modal">
+                &times;
+            </button>
+        </div>
+
+        <form id="experience-form" method="POST" class="project-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_title">Judul / Posisi</label>
+                <input type="text" name="title" id="id_title" required class="form-control" placeholder="Contoh: Software Engineer Intern">
+            </div>
+
+            <div class="form-group">
+                <label for="id_category">Kategori</label>
+                <input type="text" name="category" id="id_category" required class="form-control" placeholder="Contoh: Work, Organization, Volunteer">
+            </div>
+
+            <div class="form-group">
+                <label for="id_description">Deskripsi</label>
+                <textarea name="description" id="id_description" rows="4" required class="form-control" placeholder="Jelaskan peran dan pencapaian Anda..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="id_start_date">Tanggal Mulai</label>
+                <input type="date" name="start_date" id="id_start_date" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="id_end_date">Tanggal Selesai (Kosongkan jika masih berlangsung)</label>
+                <input type="date" name="end_date" id="id_end_date" class="form-control">
+            </div>
+
+            <div class="project-modal__footer">
+                <button type="button" class="button button-secondary" onclick="closeExperienceModal()">Batal</button>
+                <button type="submit" class="button">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
