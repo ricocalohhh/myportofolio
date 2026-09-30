@@ -7,12 +7,14 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
-from main.forms import ProjectForm, ExperienceForm
+from main.forms import ProjectForm, ExperienceForm, EducationForm
 from main.models import Experience, Education, Project
 from django.contrib.auth.decorators import login_required  
 from django.core.exceptions import PermissionDenied 
+from django.utils.html import strip_tags
 
 from datetime import datetime
+
 
 def register(request):
     form = UserCreationForm(request.POST or None)
@@ -65,7 +67,7 @@ def show_main(request):
     return render(request, "index.html", context)
 
 
-# ==================== EXPERIENCE SECTION ====================
+# ==================== SECTION PROJECTS ====================
 
 def show_projects(request):
     context = {
@@ -171,7 +173,7 @@ def create_project_ajax(request):
 
     return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
-# ==================== EXPERIENCE SECTION ====================
+# ==================== SECTION EXPERIENCE  ====================
 
 # --- READ (Dapat diakses oleh SIAPA PUN: Anonymous, User, Editor, Superuser) ---
 
@@ -185,7 +187,6 @@ def show_experience(request):
 @login_required(login_url="/login/")
 @require_POST
 def create_experience(request):
-    # Cek hak akses
     if not (request.user.is_superuser or request.user.is_staff):
         return JsonResponse(
             {"status": "error", "message": "Anda tidak memiliki izin untuk menambah data."}, 
@@ -196,11 +197,14 @@ def create_experience(request):
     if form.is_valid():
         form.save()
         return JsonResponse({"status": "success", "message": "Berhasil menyimpan!"}, status=201)
-    
+
+    # Ambil pesan error pertama agar spesifik untuk Toast
+    first_error = next(iter(form.errors.values()))[0] if form.errors else "Gagal menyimpan, periksa kembali input Anda."
+
     return JsonResponse(
         {
             "status": "error", 
-            "message": "Gagal menyimpan, periksa kembali input Anda.",
+            "message": first_error,
             "errors": form.errors.get_json_data()
         }, 
         status=400
@@ -210,14 +214,12 @@ def create_experience(request):
 @login_required(login_url="/login/")
 @require_POST
 def edit_experience(request, id):
-    # 1. Hak Akses / Otorisasi Backend -> Status 403 (Forbidden)
     if not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
         return JsonResponse(
             {"status": "error", "message": "Anda tidak memiliki izin untuk mengedit data ini."}, 
             status=403
         )
 
-    # 2. Ambil objek Experience atau return 404 jika tidak ditemukan
     try:
         experience = Experience.objects.get(pk=id)
     except Experience.DoesNotExist:
@@ -226,82 +228,99 @@ def edit_experience(request, id):
             status=404
         )
 
-    # 3. Binding data request.POST ke ExperienceForm dengan instance yang ada
     form = ExperienceForm(request.POST, instance=experience)
 
-    # 4. Validasi Form
     if form.is_valid():
         form.save()
         return JsonResponse(
             {"status": "success", "message": "Data pengalaman berhasil diperbarui!"}, 
-            status=200 # Status 200 OK
+            status=200
         )
     else:
-        # Jika input tidak valid (misal: format tanggal salah) -> Status 400 Bad Request
+        # Ambil pesan error pertama agar spesifik untuk Toast
+        first_error = next(iter(form.errors.values()))[0] if form.errors else "Gagal memperbarui data. Periksa kembali input Anda."
+
         return JsonResponse(
             {
                 "status": "error", 
-                "message": "Gagal memperbarui data. Periksa kembali input Anda.",
+                "message": first_error,
                 "errors": form.errors.get_json_data()
             }, 
             status=400
         )
 
-# --- DELETE (Hanya Superuser) ---
+# --- DELETE ---
 @login_required(login_url="/login/")
 @require_POST
 def delete_experience(request, id):
-    if not request.user.is_superuser:
-        return JsonResponse({"message": "Akses ditolak."}, status=403)
-
-    experience = get_object_or_404(Experience, pk=id)
-    experience.delete()
-    return JsonResponse({"message": "Pengalaman berhasil dihapus!"}, status=200)
-
-def get_experience_json(request):
-    query = request.GET.get('q', '')
-    experiences = Experience.objects.all()
-    
-    if query:
-        experiences = experiences.filter(
-            Q(title__icontains=query) | Q(category__icontains=query)
+    # Sesuaikan dengan kebijakan role (apakah superuser saja atau termasuk staff)
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse(
+            {"status": "error", "message": "Anda tidak memiliki izin untuk menghapus data ini."}, 
+            status=403
         )
+
+    try:
+        experience = Experience.objects.get(pk=id)
+        experience.delete()
+        return JsonResponse(
+            {"status": "success", "message": "Pengalaman berhasil dihapus!"}, 
+            status=200
+        )
+    except Experience.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Data pengalaman tidak ditemukan."}, 
+            status=404
+        )
+
+@login_required(login_url="/login/")
+@require_POST
+def toggle_star_experience(request, id):
+    experience = get_object_or_404(Experience, pk=id)
+    
+    if request.user in experience.starred_by.all():
+        experience.starred_by.remove(request.user)
+        is_starred = False
+    else:
+        experience.starred_by.add(request.user)
+        is_starred = True
+
+    return JsonResponse({
+        "is_starred": is_starred,
+        "star_count": experience.starred_by.count(),
+        "starred_by_names": ", ".join([u.username for u in experience.starred_by.all()])
+    })
+
+# --- GET JSON ---
+def get_experience_json(request):
+    title_query = request.GET.get("title", "").strip()
+    experiences = Experience.objects.prefetch_related('starred_by').all()
+
+    if title_query:
+        experiences = experiences.filter(title__icontains=title_query)
 
     data = []
     for exp in experiences:
+        starred_users = exp.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
+
         data.append({
-            'id': str(exp.id),
-            'title': exp.title,
-            'category': exp.category,  
-            'description': exp.description,
-            'started_at': exp.started_at.strftime('%Y-%m-%d') if exp.started_at else None,
-            'ended_at': exp.ended_at.strftime('%Y-%m-%d') if exp.ended_at else None,
-            'is_starred': exp.starred_by.filter(id=request.user.id).exists() if request.user.is_authenticated else False,
-            'star_count': exp.starred_by.count(),
+            "id": str(exp.id),
+            "title": exp.title,
+            "category": exp.category,
+            "description": exp.description,
+            "thumbnail": getattr(exp, "thumbnail", ""),
+            "started_at": exp.started_at.strftime("%Y-%m-%d") if exp.started_at else None,
+            "ended_at": exp.ended_at.strftime("%Y-%m-%d") if exp.ended_at else None,
+            "star_count": starred_users.count(),
+            "is_starred": is_starred,
+            "starred_by_names": starred_by_names,
         })
 
     return JsonResponse(data, safe=False)
 
-@login_required(login_url="/login/")
-@require_POST
-def toggle_star_experience(request, experience_id):
-    experience = get_object_or_404(Experience, pk=experience_id)
-    star_relation = experience.stars if hasattr(experience, 'stars') else experience.starred_by
-    
-    if request.user in star_relation.all():
-        star_relation.remove(request.user)
-        is_starred = False
-    else:
-        star_relation.add(request.user)
-        is_starred = True
-        
-    return JsonResponse({
-        "message": "Status star berhasil diperbarui.",
-        "is_starred": is_starred,
-        "star_count": star_relation.count()
-    }, status=200)
-
-# ==================== EDUCATION SECTION ==================== 
+# ==================== SECTION EDUCATION ==================== 
 def show_education(request):
     context = {
         'name': 'Enrico Oscar Harits Caloh',
@@ -313,76 +332,145 @@ def show_education(request):
 
 # Endpoint AJAX Get List Data JSON
 def get_education_json(request):
-    query = request.GET.get("q", "").strip()
-    educations = Education.objects.all().order_by('-id')
+    title_query = request.GET.get("title", "").strip()
+    
+    # Hapus prefetch_related('starred_by') di sini
+    educations = Education.objects.all()
 
-    if query:
-        educations = educations.filter(institution__icontains=query)
+    if title_query:
+        educations = educations.filter(institution__icontains=title_query)
 
-    data = [
-        {
-            "id": edu.id,
+    data = []
+    for edu in educations:
+        data.append({
+            "id": str(edu.id),
             "institution": edu.institution,
             "degree": edu.degree,
-            "duration": edu.duration,
-            "description": edu.description or "",
-            "logo_url": edu.logo_url or "",
-        }
-        for edu in educations
-    ]
+            "field_of_study": getattr(edu, "field_of_study", ""),
+            "description": getattr(edu, "description", ""),
+            "started_at": edu.started_at.strftime("%Y-%m-%d") if hasattr(edu, "started_at") and edu.started_at else None,
+            "ended_at": edu.ended_at.strftime("%Y-%m-%d") if hasattr(edu, "ended_at") and edu.ended_at else None,
+        })
+
     return JsonResponse(data, safe=False)
 
-# Endpoint AJAX Create
-@login_required
+# --- CREATE EDUCATION ---
+@login_required(login_url="/login/")
 @require_POST
 def create_education(request):
     if not (request.user.is_superuser or request.user.is_staff):
-        return JsonResponse({"status": "error", "message": "Akses ditolak."}, status=403)
+        return JsonResponse(
+            {"status": "error", "message": "Anda tidak memiliki izin untuk menambah data."}, 
+            status=403
+        )
 
-    institution = request.POST.get("institution", "").strip()
-    degree = request.POST.get("degree", "").strip()
-    duration = request.POST.get("duration", "").strip()
-    description = request.POST.get("description", "").strip()
-    logo_url = request.POST.get("logo_url", "").strip()
+    form = EducationForm(request.POST)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"status": "success", "message": "Pendidikan berhasil ditambahkan!"}, status=201)
 
-    if not (institution and degree and duration):
-        return JsonResponse({"status": "error", "message": "Field wajib tidak boleh kosong."}, status=400)
+    # Ambil pesan error spesifik pertama dari clean_<field>
+    first_error = next(iter(form.errors.values()))[0] if form.errors else "Gagal menyimpan, periksa kembali input Anda."
 
-    Education.objects.create(
-        institution=institution,
-        degree=degree,
-        duration=duration,
-        description=description,
-        logo_url=logo_url,
+    return JsonResponse(
+        {
+            "status": "error", 
+            "message": first_error,
+            "errors": form.errors.get_json_data()
+        }, 
+        status=400
     )
-    return JsonResponse({"status": "success", "message": "Pendidikan berhasil ditambahkan!"}, status=201)
 
-# Endpoint AJAX Edit
-@login_required
+# --- EDIT EDUCATION ---
+@login_required(login_url="/login/")
 @require_POST
 def edit_education(request, id):
     if not (request.user.is_superuser or request.user.is_staff):
-        return HttpResponseForbidden("Unauthorized")
+        return JsonResponse(
+            {"status": "error", "message": "Anda tidak memiliki izin untuk mengedit data ini."}, 
+            status=403
+        )
 
-    edu = get_object_or_404(Education, pk=id)
-    edu.institution = request.POST.get("institution", edu.institution)
-    edu.degree = request.POST.get("degree", edu.degree)
-    edu.duration = request.POST.get("duration", edu.duration)
-    edu.description = request.POST.get("description", edu.description)
-    edu.logo_url = request.POST.get("logo_url", edu.logo_url)
-    edu.save()
+    try:
+        education = Education.objects.get(pk=id)
+    except Education.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Data pendidikan tidak ditemukan."}, 
+            status=404
+        )
 
-    return JsonResponse({"status": "success", "message": "Pendidikan berhasil diperbarui!"})
+    form = EducationForm(request.POST, instance=education)
 
-# Endpoint AJAX Delete
-@login_required
+    if form.is_valid():
+        form.save()
+        return JsonResponse(
+            {"status": "success", "message": "Data pendidikan berhasil diperbarui!"}, 
+            status=200
+        )
+    else:
+        first_error = next(iter(form.errors.values()))[0] if form.errors else "Gagal memperbarui data."
+
+        return JsonResponse(
+            {
+                "status": "error", 
+                "message": first_error,
+                "errors": form.errors.get_json_data()
+            }, 
+            status=400
+        )
+
+# --- DELETE EDUCATION ---
+@login_required(login_url="/login/")
 @require_POST
 def delete_education(request, id):
-    if not request.user.is_superuser:
-        return HttpResponseForbidden("Unauthorized")
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse(
+            {"status": "error", "message": "Anda tidak memiliki izin untuk menghapus data ini."}, 
+            status=403
+        )
 
-    edu = get_object_or_404(Education, pk=id)
-    edu.delete()
-    return JsonResponse({"status": "success", "message": "Pendidikan berhasil dihapus!"})
+    try:
+        education = Education.objects.get(pk=id)
+        education.delete()
+        return JsonResponse(
+            {"status": "success", "message": "Data pendidikan berhasil dihapus!"}, 
+            status=200
+        )
+    except Education.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Data pendidikan tidak ditemukan."}, 
+            status=404
+        )
 
+# --- GET EDUCATION JSON ---
+from django.http import JsonResponse
+from .models import Education
 
+def get_education_json(request):
+    title_query = request.GET.get("title", "").strip()
+    educations = Education.objects.all()
+
+    if title_query:
+        educations = educations.filter(institution__icontains=title_query)
+
+    data = []
+    for edu in educations:
+        start = edu.started_at.strftime('%Y') if hasattr(edu, 'started_at') and edu.started_at else ''
+        end = edu.ended_at.strftime('%Y') if hasattr(edu, 'ended_at') and edu.ended_at else 'Present'
+        
+        if hasattr(edu, 'start_year') and edu.start_year:
+            start = str(edu.start_year)
+            end = str(edu.end_year) if edu.end_year else 'Present'
+
+        duration = f"{start} - {end}" if start else getattr(edu, 'duration', '')
+
+        data.append({
+            'id': str(edu.id),
+            'institution': edu.institution,
+            'degree': edu.degree,
+            'duration': duration,
+            'logo_url': getattr(edu, 'logo_url', ''),
+            'description': getattr(edu, 'description', ''),
+        })
+
+    return JsonResponse(data, safe=False)
