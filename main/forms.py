@@ -31,6 +31,7 @@ class ExperienceForm(ModelForm):
             "title",
             "category",
             "description",
+            "started_at",
             "ended_at",
             "thumbnail",
         ]
@@ -39,6 +40,7 @@ class ExperienceForm(ModelForm):
             "title": "Judul / Posisi Pengalaman",
             "category": "Kategori",
             "description": "Deskripsi Pengalaman",
+            "started_at": "Tanggal Mulai",
             "ended_at": "Tanggal Selesai (Kosongkan jika masih berlangsung)",
             "thumbnail": "URL Gambar / Logo (Opsional)",
         }
@@ -63,6 +65,12 @@ class ExperienceForm(ModelForm):
                     "class": "form-control",
                 }
             ),
+            "started_at": DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "form-control custom-date",
+                }
+            ),
             "ended_at": DateInput(
                 attrs={
                     "type": "date",
@@ -76,3 +84,13 @@ class ExperienceForm(ModelForm):
                 }
             ),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        started_at = cleaned_data.get('started_at')
+        ended_at = cleaned_data.get('ended_at')
+
+        if started_at and ended_at and ended_at < started_at:
+            raise ValidationError("Tanggal selesai tidak boleh lebih awal dari tanggal mulai.")
+        
+        return cleaned_data

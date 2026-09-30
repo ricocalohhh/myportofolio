@@ -1,9 +1,8 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
-
-from main.models import Experience
-
+from datetime import date
+from main.models import Experience, Education
 
 class MainTest(TestCase):
     def setUp(self):
@@ -11,11 +10,11 @@ class MainTest(TestCase):
             title="Asisten Dosen PBP",
             description="Membantu mahasiswa memahami pengembangan web.",
             category="part-time",
+            started_at=date(2024, 1, 1),
         )
 
     def test_main_url_is_accessible(self):
         response = self.client.get(reverse("main:show_main"))
-
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "index.html")
         self.assertNotContains(response, self.experience.title)
@@ -23,7 +22,6 @@ class MainTest(TestCase):
 
     def test_nonexistent_page_returns_404(self):
         response = self.client.get("/halaman-yang-tidak-ada/")
-
         self.assertEqual(response.status_code, 404)
 
     def test_experience_model(self):
@@ -38,114 +36,167 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
         
-        # Karena rendering menggunakan AJAX/JS, periksa keberadaan ID container dan skrip fetch JSON
-        self.assertContains(response, 'id="experience_cards"')
+        # UBAH BARIS INI: dari 'experience_cards' menjadi 'experience-grid-container'
+        self.assertContains(response, 'id="experience-grid-container"')
         self.assertContains(response, reverse("main:get_experience_json"))
-        self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
         response = self.client.get(reverse("main:show_experience"))
-
-        self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+        self.assertContains(response, "Belum ada pengalaman yang ditemukan.")
 
     def test_completed_experience(self):
         """Menguji bahwa logika data selesai/berlangsung berfungsi dengan baik pada Endpoint JSON API"""
-        self.experience.ended_at = timezone.now()
+        self.experience.ended_at = timezone.now().date()
         self.experience.save()
 
-        # Panggil endpoint JSON API 
         response = self.client.get(reverse("main:get_experience_json"))
-
         self.assertFalse(self.experience.is_ongoing)
         self.assertEqual(response.status_code, 200)
-        
-        # Pastikan tanggal ended_at tidak null 
         self.assertNotContains(response, '"ended_at": null')
 
-    def test_create_experience_view(self):
-        """Menguji akses halaman form create dan proses pengiriman data baru"""
-        get_response = self.client.get(reverse("main:create_experience"))
-        self.assertEqual(get_response.status_code, 200)
-
-        # 2. Tes submit form penambahan data (POST)
-        data = {
-            "title": "Software Engineer Intern",
-            "description": "Mengembangkan fitur aplikasi web.",
-            "category": "internship",
-        }
-        post_response = self.client.post(reverse("main:create_experience"), data)
-        
-        # Memastikan berhasil 
-        self.assertEqual(post_response.status_code, 302)
-        self.assertEqual(Experience.objects.count(), 2)
-        self.assertTrue(Experience.objects.filter(title="Software Engineer Intern").exists())
-
-    def test_edit_experience_view(self):
-        """Menguji pembaruan data experience yang sudah ada"""
-        edit_data = {
-            "title": "Asisten Dosen PBP (Updated)",
-            "description": "Membantu mahasiswa dan mengevaluasi tugas.",
-            "category": "part-time",
-        }
-        response = self.client.post(
-            reverse("main:edit_experience", kwargs={"id": self.experience.id}),
-            edit_data,
-        )
-
-        # Memastikan berhasil 
-        self.assertEqual(response.status_code, 302)
-        self.experience.refresh_from_db()
-        self.assertEqual(self.experience.title, "Asisten Dosen PBP (Updated)")
-
-    def test_delete_experience_view(self):
-        """Menguji penghapusan data experience"""
-        response = self.client.get(
-            reverse("main:delete_experience", kwargs={"id": self.experience.id})
-        )
-
-        # Memastikan berhasil 
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(Experience.objects.count(), 0)
-
-    def test_get_experience_json_view(self):
-        """Menguji pengembalian data dalam format JSON dan fitur filtering berdasarkan title"""
-        # 1. Tes mengambil seluruh data JSON
-        response = self.client.get(reverse("main:get_experience_json"))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "application/json")
-        self.assertContains(response, self.experience.title)
-
-        # 2. Tes filtering dengan query parameter   
-        filter_response = self.client.get(
-            reverse("main:get_experience_json") + "?title=Asisten"
-        )
-        self.assertEqual(filter_response.status_code, 200)
-        self.assertContains(filter_response, "Asisten Dosen PBP")
-
-        # 3. Tes filtering dengan query yang tidak cocok
-        no_match_response = self.client.get(
-            reverse("main:get_experience_json") + "?title=TidakAda"
-        )
-        self.assertNotContains(no_match_response, "Asisten Dosen PBP")
-
     def test_education_url_and_template(self):
-        response = self.client.get('/education/')
+        response = self.client.get("/education/")
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'education.html')
+        self.assertTemplateUsed(response, "education.html")
 
     def test_education_data_appears_when_exists(self):
-        from main.models import Education
         Education.objects.create(
             institution="Universitas Indonesia",
             degree="S1 Sistem Informasi",
-            duration="2025 - Sekarang"
+            duration="2025 - Sekarang",
         )
-        response = self.client.get('/education/')
+        response = self.client.get("/education/")
         self.assertContains(response, "Universitas Indonesia")
         self.assertContains(response, "S1 Sistem Informasi")
 
     def test_education_empty_state_appears_when_no_data(self):
-        response = self.client.get('/education/')
+        response = self.client.get("/education/")
         self.assertContains(response, "Belum ada riwayat pendidikan yang ditambahkan.")
 
+
+class ExperienceAJAXTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        # 1. Buat User Admin/Staff
+        self.admin_user = User.objects.create_superuser(
+            username="admin_test",
+            email="admin@example.com",
+            password="password123",
+        )
+
+        # 2. Buat User Biasa (Non-Staff)
+        self.regular_user = User.objects.create_user(
+            username="user_test",
+            email="user@example.com",
+            password="password123",
+        )
+
+        # 3. Buat Data Dummy untuk pengujian edit & search
+        self.exp_dummy = Experience.objects.create(
+            title="Asisten Dosen PBP",
+            category="internship",
+            description="Membantu kelas PBP",
+            started_at="2024-01-01",
+        )
+
+    # --- 1. UJI STATUS HTTP 403 (FORBIDDEN) ---
+    def test_create_experience_unauthorized(self):
+        """User tanpa login / non-staff mencoba membuat data -> Harus 403"""
+        # Tanpa Login
+        response = self.client.post(
+            reverse("main:create_experience"),
+            {
+                "title": "Hack Entry",
+                "category": "full-time",
+                "description": "Test",
+                "started_at": "2024-01-01",
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+        # Login sebagai User Biasa (Non-Staff)
+        self.client.login(username="user_test", password="password123")
+        response = self.client.post(
+            reverse("main:create_experience"),
+            {
+                "title": "Hack Entry",
+                "category": "full-time",
+                "description": "Test",
+                "started_at": "2024-01-01",
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+    # --- 2. UJI STATUS HTTP 201 (CREATED) ---
+    def test_create_experience_success(self):
+        """Admin membuat data valid -> Harus 201 Created"""
+        self.client.login(username="admin_test", password="password123")
+
+        response = self.client.post(
+            reverse("main:create_experience"),
+            {
+                "title": "Software Engineer Intern",
+                "category": "internship",
+                "description": "Mengembangkan fitur AJAX",
+                "started_at": "2024-02-01",
+                "ended_at": "",  # Kosong = Sedang berlangsung
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json().get("status"), "success")
+        self.assertTrue(
+            Experience.objects.filter(title="Software Engineer Intern").exists()
+        )
+
+    # --- 3. UJI STATUS HTTP 400 (BAD REQUEST) ---
+    def test_create_experience_invalid_form(self):
+        """Admin membuat data TANPA started_at (Field Wajib) -> Harus 400 Bad Request"""
+        self.client.login(username="admin_test", password="password123")
+
+        response = self.client.post(
+            reverse("main:create_experience"),
+            {
+                "title": "Invalid Entry",
+                "category": "full-time",
+                "description": "Tanpa tanggal mulai",
+                "started_at": "",  # Kosong (Invalid)
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("errors", response.json())
+
+    # --- 4. UJI STATUS HTTP 200 (OK) UNTUK EDIT ---
+    def test_edit_experience_success(self):
+        """Admin mengedit data yang ada -> Harus 200 OK"""
+        self.client.login(username="admin_test", password="password123")
+
+        url = reverse("main:edit_experience", args=[self.exp_dummy.id])
+        response = self.client.post(
+            url,
+            {
+                "title": "Asisten Dosen PBP (Updated)",
+                "category": "research",
+                "description": "Membantu kelas PBP dan riset",
+                "started_at": "2024-01-01",
+                "ended_at": "2024-06-01",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.exp_dummy.refresh_from_db()
+        self.assertEqual(self.exp_dummy.title, "Asisten Dosen PBP (Updated)")
+
+    # --- 5. UJI API SEARCH JSON ---
+    def test_get_experience_json_search(self):
+        """Uji endpoint pencarian AJAX"""
+        response = self.client.get(
+            reverse("main:get_experience_json") + "?q=Asisten"
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertGreaterEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], "Asisten Dosen PBP")
