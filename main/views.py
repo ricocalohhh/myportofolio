@@ -5,13 +5,14 @@ from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 from main.forms import ProjectForm, ExperienceForm
 from main.models import Experience, Education, Project
 from django.contrib.auth.decorators import login_required  
 from django.core.exceptions import PermissionDenied 
 
-import datetime
+from datetime import datetime
 
 def register(request):
     form = UserCreationForm(request.POST or None)
@@ -72,25 +73,49 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 # --- CREATE (Hanya Superuser) ---
-@login_required(login_url="/login/")
+@csrf_exempt
+@csrf_exempt
 def create_experience(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
     if request.method == 'POST':
-        form = ExperienceForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('main:show_experience')
-    else:
-        form = ExperienceForm()
-    
-    context = {
-        'form': form,
-        'page_title': 'Add New Experience',
-        'button_text': 'Tambah Pengalaman',
-    }
-    return render(request, 'experience_form.html', context)
+        try:
+            title = request.POST.get('title')
+            category = request.POST.get('category')
+            description = request.POST.get('description')
+            started_at_str = request.POST.get('started_at')
+            ended_at_str = request.POST.get('ended_at')
+
+            # Validasi started_at wajib diisi dan dikonversi menggunakan datetime
+            if not started_at_str:
+                return JsonResponse({"message": "Tanggal mulai wajib diisi."}, status=400)
+
+            try:
+                # Mengubah string 'YYYY-MM-DD' dari form menjadi objek date menggunakan library datetime
+                started_at = datetime.strptime(started_at_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({"message": "Format tanggal mulai tidak valid (gunakan YYYY-MM-DD)."}, status=400)
+
+            # Konversi ended_at jika diisi, jika kosong di-set ke None (opsional)
+            ended_at = None
+            if ended_at_str:
+                try:
+                    ended_at = datetime.strptime(ended_at_str, '%Y-%m-%d').date()
+                except ValueError:
+                    return JsonResponse({"message": "Format tanggal selesai tidak valid."}, status=400)
+
+            # Simpan ke database
+            Experience.objects.create(
+                title=title,
+                category=category,
+                description=description,
+                started_at=started_at,
+                ended_at=ended_at
+            )
+            return JsonResponse({"status": "success", "message": "Berhasil menyimpan!"}, status=201)
+
+        except Exception as e:
+            return JsonResponse({"message": f"Error Backend: {str(e)}"}, status=400)
+
+    return JsonResponse({"message": "Method tidak diizinkan"}, status=405)
 
 # --- EDIT / UPDATE (Hanya Editor/is_staff ATAU Superuser) ---
 @login_required(login_url="/login/")
@@ -126,22 +151,24 @@ def delete_experience(request, id):
     return JsonResponse({"message": "Pengalaman berhasil dihapus!"}, status=200)
 
 def get_experience_json(request):
-    experiences = Experience.objects.all().order_by('-id')
+    query = request.GET.get('q', '')
+    experiences = Experience.objects.all()
+    
+    if query:
+        experiences = experiences.filter(
+            Q(title__icontains=query) | Q(category__icontains=query)
+        )
 
     data = []
     for exp in experiences:
-        # Cek kustomisasi nama relation star pada model Experience (stars atau starred_by)
-        starred_users = exp.stars.all() if hasattr(exp, 'stars') else exp.starred_by.all()
-        is_starred = request.user in starred_users if request.user.is_authenticated else False
-
         data.append({
-            "id": exp.id,
-            "title": exp.title,
-            "category": exp.category if hasattr(exp, 'category') else '',
-            "description": exp.description,
-            "ended_at": exp.ended_at.strftime('%Y-%m-%d') if hasattr(exp, 'ended_at') and exp.ended_at else None,
-            "star_count": starred_users.count(),
-            "is_starred": is_starred,
+            'id': str(exp.id),
+            'title': exp.title,
+            'category': exp.category,  
+            'description': exp.description,
+            'ended_at': exp.ended_at.strftime('%Y-%m-%d') if exp.ended_at else None,
+            'is_starred': exp.starred_by.filter(id=request.user.id).exists() if request.user.is_authenticated else False,
+            'star_count': exp.starred_by.count(),
         })
 
     return JsonResponse(data, safe=False)
