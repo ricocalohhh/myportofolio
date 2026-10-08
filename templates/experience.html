@@ -237,19 +237,34 @@
     }
 
     async function toggleStarExperience(id) {
-        try {
-            const response = await fetch(`/experience/${id}/star/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Accept': 'application/json'
-                }
-            });
-            if (response.ok) fetchExperience();
-        } catch (error) {
-            console.error('Error toggling star:', error);
+    try {
+        const response = await fetch(`/experience/${id}/star/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            fetchExperience();
+
+            const message = data.is_starred 
+                ? 'Berhasil memberikan star!' 
+                : 'Batal memberikan star!';
+            
+            if (typeof showToast === 'function') {
+                showToast(message, 'success');
+            } else if (typeof showNotification === 'function') {
+                showNotification(message);
+            }
         }
+    } catch (error) {
+        console.error('Error toggling star:', error);
     }
+}
 
     async function deleteExperienceAjax(id) {
         if (!confirm('Apakah Anda yakin ingin menghapus pengalaman ini?')) return;

@@ -37,7 +37,7 @@ def login_user(request):
         user = form.get_user()
         login(request, user)
         response = redirect("main:show_main")
-        response.set_cookie('last_login', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        response.set_cookie('last_login', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return response
 
     context = {
@@ -275,9 +275,9 @@ def delete_experience(request, id):
 
 @login_required(login_url="/login/")
 @require_POST
-def toggle_star_experience(request, id):
-    experience = get_object_or_404(Experience, pk=id)
-    
+def toggle_star_experience(request, experience_id): 
+    experience = get_object_or_404(Experience, pk=experience_id)
+
     if request.user in experience.starred_by.all():
         experience.starred_by.remove(request.user)
         is_starred = False
