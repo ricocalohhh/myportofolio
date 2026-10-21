@@ -2,6 +2,10 @@ from django.urls import path
 
 from main.views import show_main, show_experience, show_education, create_project, show_projects, get_projects_json, delete_project, create_experience, edit_experience, delete_experience, get_experience_json
 from main.views import register, login_user, logout_user, toggle_star, toggle_star_experience, create_project_ajax, get_education_json, create_education, edit_education, delete_education
+from main.views import  contact_add, contact_delete, contact_search, contact_list, contact_edit, contact_row, contact_update
+
+app_name = "main"
+
 app_name = "main"
 
 urlpatterns = [
@@ -28,10 +32,18 @@ urlpatterns = [
     path("projects/<uuid:project_id>/star/", toggle_star, name="toggle_star"),
 
     # Education
-    # Education
     path("education/", show_education, name="show_education"),
     path("education/json/", get_education_json, name="get_education_json"),
     path("education/add/", create_education, name="create_education"),
     path("education/<int:id>/edit/", edit_education, name="edit_education"),      # Ubah ke <uuid:id> jika primary key model kamu UUID
     path("education/<int:id>/delete/", delete_education, name="delete_education"),  # Ubah ke <uuid:id> jika primary key model kamu UUID
+
+    # Contact
+    path("", contact_list, name="contact_list"),
+    path("contacts/add/", contact_add, name="contact_add"),
+    path("contacts/<int:pk>/delete/", contact_delete, name="contact_delete"),
+    path("contacts/search/", contact_search, name="contact_search"),
+    path("contacts/<int:pk>/edit/", contact_edit, name="contact_edit"),
+    path("contacts/<int:pk>/row/", contact_row, name="contact_row"),
+    path("contacts/<int:pk>/update/", contact_update, name="contact_update"),
 ]

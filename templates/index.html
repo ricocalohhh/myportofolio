@@ -3,6 +3,15 @@
 
 {% block meta %}
     <title>Profile - {{ name }}</title>
+    <style>
+        /* Indikator loading HTMX otomatis muncul saat request aktif */
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator, .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+    </style>
 {% endblock meta %}
 
 {% block content %}
@@ -32,9 +41,9 @@
                         <dd>{{ study_program }}</dd>
                     </div>
                     <div class="meta-row">
-                            <dt>Sesi Terakhir Login</dt>
-                            <dd>{{ last_login }}</dd>
-                        </div>
+                        <dt>Sesi Terakhir Login</dt>
+                        <dd>{{ last_login }}</dd>
+                    </div>
                 </dl>
                 <div class="social-links">
                     <a href="https://github.com/ricocalohhh" class="social-link">GitHub</a>
@@ -42,6 +51,48 @@
                     <a href="mailto:ricocaloh92@gmail.com" class="social-link">Email</a>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- SECTION FITUR HTMX KONTAK + LIVE SEARCH -->
+    <section class="contacts-section" style="padding: 40px 0;">
+        <div class="container">
+            <h1>Tambah Kontak</h1>
+            <form hx-post="{% url 'main:contact_add' %}"
+                  hx-target="#contact-rows"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if (event.detail.successful) this.reset()"
+                  style="margin-bottom: 24px;">
+              {% csrf_token %}
+              <input type="text" name="name" placeholder="Nama" required>
+              <input type="email" name="email" placeholder="Email" required>
+              <button type="submit">Tambah</button>
+            </form>
+
+            <h2>Daftar Kontak</h2>
+
+            <!-- LIVE SEARCH HTMX -->
+            <div style="margin-bottom: 16px;">
+                <input type="search" name="q" placeholder="Cari kontak..."
+                       hx-get="{% url 'main:contact_search' %}"
+                       hx-trigger="keyup changed delay:300ms, search"
+                       hx-target="#contact-rows"
+                       hx-indicator="#search-indicator">
+                <span id="search-indicator" class="htmx-indicator">Mencari...</span>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>Email</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="contact-rows">
+                {% include "_contact_rows.html" %}
+              </tbody>
+            </table>
         </div>
     </section>
     
