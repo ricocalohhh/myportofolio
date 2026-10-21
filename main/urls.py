@@ -1,25 +1,43 @@
 from django.urls import path
 
 from main.views import show_main, show_experience, show_education, create_project, show_projects, get_projects_json, delete_project, create_experience, edit_experience, delete_experience, get_experience_json
-from main.views import register, login_user, logout_user, toggle_star, toggle_star_experience
+from main.views import register, login_user, logout_user, toggle_star, toggle_star_experience, contact_add, contact_delete, contact_search, contact_list, contact_edit, contact_row, contact_update
 
 app_name = "main"
 
 urlpatterns = [
     path("", show_main, name="show_main"),
+    
+    # Experience
     path("experience/", show_experience, name="show_experience"),
     path("experience/add/", create_experience, name="create_experience"),
     path("experience/<uuid:id>/edit/", edit_experience, name="edit_experience"),
     path("experience/<uuid:id>/delete/", delete_experience, name="delete_experience"),
     path("experience/json/", get_experience_json, name="get_experience_json"),
+    path("experience/<uuid:experience_id>/star/", toggle_star_experience, name="toggle_star_experience"),
+
+    # Education
     path("education/", show_education, name="show_education"),
-    path("projects/add/", create_project, name="create_project"),
+
+    # Projects
     path("projects/", show_projects, name="show_projects"),
-    path("api/projects/", get_projects_json, name="get_projects_json"),
+    path("projects/add/", create_project, name="create_project"),
     path("projects/<uuid:project_id>/delete/", delete_project, name="delete_project"),
+    path("projects/<uuid:project_id>/star/", toggle_star, name="toggle_star"),
+    path("api/projects/", get_projects_json, name="get_projects_json"),
+
+    # Authentication
     path("register/", register, name="register"),
     path("login/", login_user, name="login"),
     path("logout/", logout_user, name="logout"),
-    path("projects/<uuid:project_id>/star/", toggle_star, name="toggle_star"),
-    path("experience/<uuid:experience_id>/star/", toggle_star_experience, name="toggle_star_experience"),
+
+    # Contact
+    path("", contact_list, name="contact_list"),
+    path("contacts/add/", contact_add, name="contact_add"),
+    path("contacts/<int:pk>/delete/", contact_delete, name="contact_delete"),
+    path("contacts/search/", contact_search, name="contact_search"),
+    path("contacts/<int:pk>/edit/", contact_edit, name="contact_edit"),
+    path("contacts/<int:pk>/row/", contact_row, name="contact_row"),
+    path("contacts/<int:pk>/update/", contact_update, name="contact_update"),
+
 ]
