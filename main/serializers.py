@@ -52,26 +52,38 @@ class ExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experience
         fields = [
-            "id", "title", "category", "description", 
-            "thumbnail", "started_at", "ended_at",
-            "star_count", "is_starred", "starred_by_names",
+            "id", "title", "category", "description", "thumbnail",
+            "started_at", "ended_at", "star_count", "is_starred",
+            "starred_by_names",
         ]
         read_only_fields = ["id"]
 
     def validate_title(self, value):
         value = strip_tags(value).strip()
         if not value:
-            raise serializers.ValidationError("Title cannot be empty.")
+            raise serializers.ValidationError("Judul tidak boleh kosong.")
         return value
+
+    def validate_description(self, value):
+        value = strip_tags(value).strip()
+        if not value:
+            raise serializers.ValidationError("Deskripsi tidak boleh kosong.")
+        return value
+
+    def validate(self, attrs):
+        start = attrs.get("started_at", self.instance.started_at if self.instance else None)
+        end = attrs.get("ended_at", self.instance.ended_at if self.instance else None)
+        if start and end and end < start:
+            raise serializers.ValidationError({"ended_at": "Tanggal selesai tidak boleh lebih awal dari tanggal mulai."})
+        return attrs
 
     def get_star_count(self, obj):
         return obj.starred_by.count()
 
     def get_is_starred(self, obj):
         request = self.context.get("request")
-        if request is None or not request.user.is_authenticated:
-            return False
-        return request.user in obj.starred_by.all()
+        return bool(request and request.user.is_authenticated and
+                    obj.starred_by.filter(pk=request.user.pk).exists())
 
     def get_starred_by_names(self, obj):
         return ", ".join(user.username for user in obj.starred_by.all())
