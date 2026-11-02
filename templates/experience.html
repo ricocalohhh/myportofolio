@@ -13,7 +13,7 @@
             <!-- Header Halaman -->
             <div class="project-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h1>Experience</h1>
-                {% if user.is_superuser or user.is_staff %}
+                {% if user.is_superuser %}
                     <button type="button" class="button project-add-button" onclick="openExperienceModal()">
                         <span>+</span> Tambah Pengalaman
                     </button>
@@ -51,7 +51,7 @@
 </main>
 
 <!-- Modal Tambah/Edit Experience -->
-{% if user.is_superuser or user.is_staff %}
+{% if can_edit_experience %}
 <div id="experienceModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
     <div class="modal-content">
         <span class="close-button" onclick="closeExperienceModal()">&times;</span>
@@ -102,9 +102,9 @@
 {% endif %}
 
 <script>
-    const BASE_EXPERIENCE_ENDPOINT = "{% url 'main:get_experience_json' %}";
+    const BASE_EXPERIENCE_ENDPOINT = "{% url 'api:experience-list' %}";
+    const CAN_EDIT = "{{ can_edit_experience|yesno:'true,false' }}" === "true";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
-    const IS_STAFF = "{{ user.is_staff|yesno:'true,false' }}" === "true";
     const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
 
     const gridContainer = document.getElementById('experience-grid-container');
@@ -149,7 +149,7 @@
             displayPageSection({ showLoading: true });
 
             const endpoint = searchQuery 
-                ? `${BASE_EXPERIENCE_ENDPOINT}?q=${encodeURIComponent(searchQuery)}` 
+                ? `${BASE_EXPERIENCE_ENDPOINT}?title=${encodeURIComponent(searchQuery)}` 
                 : BASE_EXPERIENCE_ENDPOINT;
 
             const response = await fetch(endpoint, {
@@ -206,8 +206,13 @@
         }
 
         let adminActionsHTML = '';
-        if (IS_STAFF || IS_SUPERUSER) {
-            adminActionsHTML += `<button type="button" class="button button-sm" onclick="editExperience('${item.id}', '${encodeURIComponent(JSON.stringify(item))}')">Edit</button>`;
+        if (CAN_EDIT) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'button button-sm';
+            button.textContent = 'Edit';
+            button.addEventListener('click', () => editExperience(item.id, encodeURIComponent(JSON.stringify(item))));
+            article.querySelector('.project-actions').prepend(button);
         }
         if (IS_SUPERUSER) {
             adminActionsHTML += `<button type="button" class="button button-sm button-danger" onclick="deleteExperienceAjax('${item.id}')">Hapus</button>`;
@@ -237,85 +242,47 @@
     }
 
     async function toggleStarExperience(id) {
-    try {
-        const response = await fetch(`/experience/${id}/star/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Accept': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            
-            fetchExperience();
-
-            const message = data.is_starred 
-                ? 'Berhasil memberikan star!' 
-                : 'Batal memberikan star!';
-            
-            if (typeof showToast === 'function') {
-                showToast(message, 'success');
-            } else if (typeof showNotification === 'function') {
-                showNotification(message);
-            }
+        try {
+            await sendExperience(`${BASE_EXPERIENCE_ENDPOINT}${id}/star/`, 'POST');
+            await fetchExperience();
+            showToast('Berhasil', 'Star diperbarui.', 'success');
+        } catch (error) {
+            showToast('Gagal', error.message, 'error');
         }
-    } catch (error) {
-        console.error('Error toggling star:', error);
     }
-}
 
     async function deleteExperienceAjax(id) {
-        if (!confirm('Apakah Anda yakin ingin menghapus pengalaman ini?')) return;
+        if (!confirm('Hapus pengalaman ini?')) return;
         try {
-            const response = await fetch(`/experience/${id}/delete/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            });
-            if (response.ok) {
-                if (typeof showToast === 'function') showToast('Berhasil', 'Pengalaman berhasil dihapus!', 'success');
-                fetchExperience();
-            } else {
-                if (typeof showToast === 'function') showToast('Gagal', 'Akses ditolak atau terjadi kesalahan.', 'error');
-            }
+            await sendExperience(`${BASE_EXPERIENCE_ENDPOINT}${id}/`, 'DELETE');
+            await fetchExperience();
+            showToast('Berhasil', 'Pengalaman dihapus.', 'success');
         } catch (error) {
-            console.error('Error deleting experience:', error);
-            if (typeof showToast === 'function') showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            showToast('Gagal', error.message, 'error');
         }
     }
 
-    async function saveExperience(event) {
+      async function saveExperience(event) {
         event.preventDefault();
-        const form = document.getElementById('experienceForm');
-        const formData = new FormData(form);
-        const expId = document.getElementById('exp_id').value;
-
-        const endpoint = expId ? `/experience/${expId}/edit/` : "{% url 'main:create_experience' %}";
-
+        const id = document.getElementById('exp_id').value;
+        const start = document.getElementById('id_started_at').value;
+        const end = document.getElementById('id_ended_at').value;
+        // DateTimeField DRF menerima ISO datetime; input date berisi tanggal saja.
+        const body = {
+            title: document.getElementById('id_title').value,
+            category: document.getElementById('id_category').value,
+            description: document.getElementById('id_description').value,
+            started_at: start ? `${start}T00:00:00Z` : null,
+            ended_at: end ? `${end}T00:00:00Z` : null,
+        };
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: formData
-            });
-
-            if (response.ok) {
-                closeExperienceModal();
-                if (typeof showToast === 'function') showToast('Berhasil', 'Data pengalaman berhasil disimpan!', 'success');
-                fetchExperience();
-            } else {
-                const result = await response.json().catch(() => ({}));
-                const msg = result.message || 'Gagal menyimpan data pengalaman.';
-                if (typeof showToast === 'function') showToast('Gagal', msg, 'error');
-            }
+            const url = id ? `${BASE_EXPERIENCE_ENDPOINT}${id}/` : BASE_EXPERIENCE_ENDPOINT;
+            await sendExperience(url, id ? 'PATCH' : 'POST', body);
+            closeExperienceModal();
+            await fetchExperience();
+            showToast('Berhasil', 'Pengalaman disimpan.', 'success');
         } catch (error) {
-            console.error('Error saving experience:', error);
-            if (typeof showToast === 'function') showToast('Gagal', 'Tidak dapat terhubung ke server.', 'error');
+            showToast('Gagal', error.message, 'error');
         }
     }
 
@@ -325,8 +292,8 @@
         document.getElementById('id_title').value = item.title;
         document.getElementById('id_category').value = item.category || 'full-time';
         document.getElementById('id_description').value = item.description || '';
-        document.getElementById('id_started_at').value = item.started_at || '';
-        document.getElementById('id_ended_at').value = item.ended_at || '';
+        document.getElementById('id_started_at').value = (item.started_at || '').slice(0, 10);
+        document.getElementById('id_ended_at').value = (item.ended_at || '').slice(0, 10);
         
         document.getElementById('modalTitle').textContent = 'Edit Pengalaman';
         document.getElementById('experienceModal').style.display = 'block';
@@ -351,6 +318,32 @@
             closeExperienceModal();
         }
     };
+
+    function csrfCookie() {
+        const entry = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        return entry ? decodeURIComponent(entry.slice('csrftoken='.length)) : '';
+    }
+
+    function apiErrorText(data) {
+        if (!data || typeof data !== 'object') return 'Permintaan gagal.';
+        return Object.entries(data).map(([field, value]) => {
+            const message = Array.isArray(value) ? value.join(', ') : String(value);
+            return field === 'detail' ? message : `${field}: ${message}`;
+        }).join(' | ') || 'Permintaan gagal.';
+    }
+
+    async function sendExperience(url, method, body) {
+        const headers = { 'X-CSRFToken': csrfCookie(), 'Accept': 'application/json' };
+        if (body !== undefined) headers['Content-Type'] = 'application/json';
+        const response = await fetch(url, {
+            method, headers,
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        // 204 tidak memiliki isi JSON.
+        const data = response.status === 204 ? null : await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(apiErrorText(data));
+        return data;
+    }
 
     document.addEventListener('DOMContentLoaded', () => fetchExperience());
 </script>

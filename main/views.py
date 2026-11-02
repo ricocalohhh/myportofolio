@@ -180,6 +180,9 @@ def create_project_ajax(request):
 def show_experience(request):
     context = {
         'name': request.user.username if request.user.is_authenticated else 'Visitor',
+        'can_edit_experience': request.user.is_authenticated and (
+            request.user.is_superuser or request.user.groups.filter(name='Editor').exists()
+        ),
     }
     return render(request, "experience.html", context)
 
