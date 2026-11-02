@@ -187,7 +187,7 @@ def show_experience(request):
 @login_required(login_url="/login/")
 @require_POST
 def create_experience(request):
-    if not (request.user.is_superuser or request.user.is_staff):
+    if not request.user.is_superuser:
         return JsonResponse(
             {"status": "error", "message": "Anda tidak memiliki izin untuk menambah data."}, 
             status=403
@@ -214,7 +214,7 @@ def create_experience(request):
 @login_required(login_url="/login/")
 @require_POST
 def edit_experience(request, id):
-    if not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
+    if not (request.user.is_superuser or request.user.groups.filter(name="Editor").exists()):
         return JsonResponse(
             {"status": "error", "message": "Anda tidak memiliki izin untuk mengedit data ini."}, 
             status=403
@@ -254,7 +254,7 @@ def edit_experience(request, id):
 @require_POST
 def delete_experience(request, id):
     # Sesuaikan dengan kebijakan role (apakah superuser saja atau termasuk staff)
-    if not (request.user.is_superuser or request.user.is_staff):
+    if not request.user.is_superuser:
         return JsonResponse(
             {"status": "error", "message": "Anda tidak memiliki izin untuk menghapus data ini."}, 
             status=403
