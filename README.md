@@ -83,7 +83,7 @@
     input ini disebut *deserialization*.
   - Pada proyek ini, `ExperienceSerializer` menentukan field yang ditampilkan, seperti `title`, `description`, `star_count`, dan `is_starred`.
 * **Keuntungan dibandingkan dictionary manual**
-  - Daftar field ditentukan secara eksplisit dalam satu class, sehingga bentuk respons lebih konsisten dan tidak perlu di load ulang pada tiap view.
+  - Daftar field ditentukan secara eksplisit dalam satu class, sehingga bentuk respons lebih konsisten dan tidak perlu di render ulang pada tiap view.
   - Validasi dapat diletakkan dalam method seperti `validate_title` dan `validate_description`. Contohnya, tag HTML dibersihkan dengan `strip_tags` dan  
     judul kosong ditolak.
   - `ModelSerializer` dapat membaca definisi model dan menyediakan implementasi dasar untuk membuat serta memperbarui objek.
@@ -118,7 +118,7 @@
     diperlukan tidak ada atau tidak valid.
 * **Mengapa `force_authenticate` tidak cukup**
     `force_authenticate` memasang pengguna secara langsung pada request untuk memudahkan pengujian izin. Cara ini melewati proses autentikasi sesi yang   
-    biasa digunakan browser. Karena hal itu, tes dengan `force_authenticate` saja tidak membuktikan bahwa pemeriksaan CSRF pada `SessionAuthentication` berjalan. Untuk mengujinya, proyek menggunakan `APIClient(enforce_csrf_checks=True)` dan `.login()`. Tes kemudian alam mengirim POST tanpa token CSRF, memeriksa respons 403, dan memastikan data baru tidak tersimpan di database.
+    biasa digunakan browser. Karena hal itu, tes dengan `force_authenticate` saja tidak membuktikan bahwa pemeriksaan CSRF pada `SessionAuthentication` berjalan. Untuk mengujinya, proyek menggunakan `APIClient(enforce_csrf_checks=True)` dan `.login()`. Tes kemudian akan mengirim POST tanpa token CSRF, memeriksa respons 403, dan memastikan data baru tidak tersimpan di database.
 
 ### AI Disclosure 
 
@@ -150,13 +150,13 @@ serta fungsi CRUD dicoba kembali melalui localhost untuk memastikan tidak ada ke
   **Perbaikan Manual:** Memindahkan kode pembuatan tombol Edit ke setelah `article.innerHTML` dan sebelum `return article`, sehingga elemen tujuan
   sudah tersedia ketika tombol ditambahkan.
 
-* **Pesan Validasi Kurang Sederhana:** Respons validasi dari API sempat itampilkan bersama nama field, misalnya `ended_at:`, sehingga pesan toast
+* **Pesan Validasi Kurang Sederhana:** Respons validasi dari API sempat ditampilkan bersama nama field, misalnya `ended_at:`, sehingga pesan toast
   seperti kurang intuitif bagi user.
   **Perbaikan Manual:** Memperbarui fungsi `apiErrorText` agar mengambil isi pesan dari respons API tanpa menampilkan nama field.
 
 4. Log / Bukti Prompting
 
 > *Daftar ringkasan prompt/interaksi utama dengan AI:*
-> - **Pengguna:** *"Bagaimana alur implementasi serializer, permission, dan API view yang tepat agar sesuai dengan ketentuan minimal ckeckliat pada tugas saya"*
+> - **Pengguna:** *"Bagaimana alur implementasi serializer, permission, dan API view yang tepat agar sesuai dengan ketentuan minimal checklist pada tugas saya"*
 > - **Pengguna:** *"Mengapa tombol Edit perlu ditambahkan setelah elemen `project-actions` dibuat di halaman?"*
-> - **Pengguna:** *"Setelah menjalankan test, ternyata tes pada bagian `tes_experience_page` error. Bagian apa yang perlu saya perbaiki dan mengapa tes masih mencari URL tersebut padahal halaman sudah menggunakan API yang baru? "*
+> - **Pengguna:** *"Setelah menjalankan test, ternyata tes pada bagian `test_experience_page` error. Bagian apa yang perlu saya perbaiki dan mengapa tes masih mencari URL tersebut padahal halaman sudah menggunakan API yang baru? "*
