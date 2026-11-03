@@ -37,9 +37,8 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
         
-        # UBAH BARIS INI: dari 'experience_cards' menjadi 'experience-grid-container'
         self.assertContains(response, 'id="experience-grid-container"')
-        self.assertContains(response, reverse("main:get_experience_json"))
+        self.assertContains(response, reverse("api:experience-list"))
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()

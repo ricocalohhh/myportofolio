@@ -202,18 +202,15 @@
             const starText = item.is_starred ? '★ Starred' : '☆ Star';
             starActionHTML = `<button type="button" class="button button-sm" onclick="toggleStarExperience('${item.id}')">${starText}</button>`;
         } else {
-            starActionHTML = `<a href="{% url 'main:login' %}" style="text-decoration: none; font-size: 0.85rem; color: #666;">Login untuk memberi star</a>`;
+            starActionHTML = `
+                <a href="{% url 'main:login' %}" class="button button-sm">
+                    Login untuk memberi star
+                </a>
+            `;
         }
 
         let adminActionsHTML = '';
-        if (CAN_EDIT) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'button button-sm';
-            button.textContent = 'Edit';
-            button.addEventListener('click', () => editExperience(item.id, encodeURIComponent(JSON.stringify(item))));
-            article.querySelector('.project-actions').prepend(button);
-        }
+
         if (IS_SUPERUSER) {
             adminActionsHTML += `<button type="button" class="button button-sm button-danger" onclick="deleteExperienceAjax('${item.id}')">Hapus</button>`;
         }
@@ -238,8 +235,21 @@
             </div>
         `;
 
+        if (CAN_EDIT) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'button button-sm';
+            button.textContent = 'Edit';
+
+            button.addEventListener('click', () => {
+                editExperience(item.id, encodeURIComponent(JSON.stringify(item)));
+            });
+
+            article.querySelector('.project-actions').prepend(button);
+        }
+
         return article;
-    }
+        }
 
     async function toggleStarExperience(id) {
         try {
@@ -325,11 +335,19 @@
     }
 
     function apiErrorText(data) {
-        if (!data || typeof data !== 'object') return 'Permintaan gagal.';
-        return Object.entries(data).map(([field, value]) => {
-            const message = Array.isArray(value) ? value.join(', ') : String(value);
-            return field === 'detail' ? message : `${field}: ${message}`;
-        }).join(' | ') || 'Permintaan gagal.';
+    if (!data || typeof data !== 'object') {
+        return 'Permintaan gagal.';
+    }
+
+    const messages = Object.values(data).flatMap(value => {
+        if (Array.isArray(value)) {
+            return value.map(String);
+        }
+
+        return [String(value)];
+    });
+
+    return messages.join(' | ') || 'Permintaan gagal.';
     }
 
     async function sendExperience(url, method, body) {

@@ -74,7 +74,9 @@ class ExperienceSerializer(serializers.ModelSerializer):
         start = attrs.get("started_at", self.instance.started_at if self.instance else None)
         end = attrs.get("ended_at", self.instance.ended_at if self.instance else None)
         if start and end and end < start:
-            raise serializers.ValidationError({"ended_at": "Tanggal selesai tidak boleh lebih awal dari tanggal mulai."})
+            raise serializers.ValidationError({
+                "ended_at": "Tanggal selesai tidak boleh sebelum tanggal mulai."
+            })
         return attrs
 
     def get_star_count(self, obj):
