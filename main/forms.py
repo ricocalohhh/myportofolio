@@ -1,6 +1,6 @@
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select, DateInput, URLField
-from django.core.exceptions import ValidationError  # TAMBAHKAN IMPORT INI
-from django.utils.html import strip_tags           # TAMBAHKAN IMPORT INI
+from django.core.exceptions import ValidationError  
+from django.utils.html import strip_tags           
 
 from django import forms
 from django.utils.html import strip_tags
@@ -117,7 +117,6 @@ class EducationForm(forms.ModelForm):
     class Meta:
         model = Education
         fields = ['institution', 'degree', 'duration', 'description', 'logo_url']
-        # Sesuaikan 'fields' dengan nama kolom yang ada di model Education Anda
 
     def clean_institution(self):
         institution = strip_tags(self.cleaned_data.get("institution", "")).strip()

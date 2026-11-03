@@ -67,7 +67,6 @@ class MainTest(TestCase):
             duration="2022 - Present",
         )
 
-        # Minta data melalui endpoint JSON AJAX
         response = self.client.get(reverse("main:get_education_json")) # Sesuaikan nama route JSON education kamu
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "S1 Sistem Informasi")

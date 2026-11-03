@@ -73,7 +73,7 @@ def show_projects(request):
     context = {
         'name': request.user.username if request.user.is_authenticated else 'Visitor',
     }
-    return render(request, "project.html", context) # Pastikan nama template sesuai, misal "projects.html" atau "project.html"
+    return render(request, "project.html", context) 
 
 @login_required(login_url="/login/")
 def create_project(request):
@@ -106,7 +106,6 @@ def get_projects_json(request):
         is_starred = request.user in starred_users if request.user.is_authenticated else False
         starred_by_names = ", ".join([u.username for u in starred_users])
 
-        # Indentasi diperbaiki: Masuk ke dalam loop for
         data.append({
             "id": str(project.id),
             "title": project.title,
@@ -256,7 +255,6 @@ def edit_experience(request, id):
 @login_required(login_url="/login/")
 @require_POST
 def delete_experience(request, id):
-    # Sesuaikan dengan kebijakan role (apakah superuser saja atau termasuk staff)
     if not request.user.is_superuser:
         return JsonResponse(
             {"status": "error", "message": "Anda tidak memiliki izin untuk menghapus data ini."}, 
@@ -336,8 +334,7 @@ def show_education(request):
 # Endpoint AJAX Get List Data JSON
 def get_education_json(request):
     title_query = request.GET.get("title", "").strip()
-    
-    # Hapus prefetch_related('starred_by') di sini
+
     educations = Education.objects.all()
 
     if title_query:

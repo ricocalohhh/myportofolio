@@ -137,7 +137,6 @@
         try {
             displayPageSection({ showLoading: true });
 
-            // UBAH 'q=' MENJADI 'title=' DI SINI
             const endpoint = query 
                 ? `${BASE_EDUCATION_ENDPOINT}?title=${encodeURIComponent(query)}` 
                 : BASE_EDUCATION_ENDPOINT;

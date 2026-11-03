@@ -35,8 +35,8 @@ urlpatterns = [
     path("education/", show_education, name="show_education"),
     path("education/json/", get_education_json, name="get_education_json"),
     path("education/add/", create_education, name="create_education"),
-    path("education/<int:id>/edit/", edit_education, name="edit_education"),      # Ubah ke <uuid:id> jika primary key model kamu UUID
-    path("education/<int:id>/delete/", delete_education, name="delete_education"),  # Ubah ke <uuid:id> jika primary key model kamu UUID
+    path("education/<int:id>/edit/", edit_education, name="edit_education"),      
+    path("education/<int:id>/delete/", delete_education, name="delete_education"),  
 
     # Contact
     path("", contact_list, name="contact_list"),
