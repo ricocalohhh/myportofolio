@@ -21,6 +21,7 @@ from main.serializers import (
 )
 
 
+
 # ==========================================
 # 1. PROJECT API VIEWS
 # ==========================================
@@ -192,3 +193,10 @@ def education_detail_api(request, education_id):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_logout(request):
+    if request.auth is not None:
+        request.auth.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
