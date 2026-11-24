@@ -70,6 +70,10 @@ REST_FRAMEWORK = {
     ],
 }
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:57714",
+]
+
 ROOT_URLCONF = 'portofolio.urls'
 
 TEMPLATES = [
