@@ -30,7 +30,12 @@ SECRET_KEY = 'django-insecure-$pd)e4$kbkc-5u(jpp=8qqj-uek=do4@=78yb144x-*lw^p^%i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "enrico-oscar-myportofolio.pws.cs.ui.ac.id"] 
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "10.0.2.2",
+    "enrico-oscar-myportofolio.pws.cs.ui.ac.id",
+]
 
 CSRF_TRUSTED_ORIGINS = ["https://enrico-oscar-myportofolio.pws.cs.ui.ac.id/"]
 
