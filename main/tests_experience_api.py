@@ -38,6 +38,9 @@ class ExperienceAPITest(APITestCase):
 
     def test_guest_and_user_cannot_write(self):
         for actor in (None, self.user):
+            expected_status = 401 if actor is None else 403
+            response = self.client.post(self.list_url, self.payload, format="json")
+            self.assertEqual(response.status_code, expected_status)
             self.client.force_authenticate(user=actor)
             self.assertEqual(self.client.post(self.list_url, self.payload, format='json').status_code, 403)
             self.assertEqual(self.client.patch(self.detail_url, {'title': 'Diubah'}, format='json').status_code, 403)
